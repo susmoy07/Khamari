@@ -1,0 +1,54 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        forest: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          950: '#022c22',
+        },
+        harvest: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+        },
+        obsidian: {
+          bg: '#0c1322',
+          subtle: '#070e1d',
+          card: '#141b2b',
+          elevated: '#191f2f',
+          high: '#232a3a',
+          border: '#1e293b',
+        },
+        cream: '#f4f7f4',
+        ink: '#0f172a',
+      },
+      fontFamily: {
+        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(6,78,59,0.06), 0 4px 16px rgba(6,78,59,0.06)',
+        'obsidian-card': '0 4px 24px rgba(0,0,0,0.45)',
+      },
+    },
+  },
+  plugins: [],
+};
