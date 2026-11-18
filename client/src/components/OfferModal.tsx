@@ -64,11 +64,11 @@ export default function OfferModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="animate-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="animate-fade-in max-h-full w-full max-w-lg overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#1e293b] dark:bg-[#141b2b] sm:rounded-3xl"
+        className="animate-sheet-up sm:animate-modal-pop max-h-full w-full max-w-lg overflow-y-auto rounded-t-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#1e293b] dark:bg-[#141b2b] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
@@ -85,7 +85,7 @@ export default function OfferModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-[#191f2f]"
+            className="rounded-full p-2 text-slate-500 transition-all duration-200 hover:rotate-90 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-[#191f2f] dark:hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
@@ -124,7 +124,7 @@ export default function OfferModal({
         </div>
 
         {preview && (
-          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 text-sm dark:border-emerald-500/25 dark:bg-emerald-950/20">
+          <div className="animate-fade-in mt-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5 text-sm dark:border-emerald-500/25 dark:bg-emerald-950/20">
             <div className="mb-1.5 font-mono text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400">
               Strategy: {preview.strategyUsed.replace(/_/g, ' ')}
             </div>

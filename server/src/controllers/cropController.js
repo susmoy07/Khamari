@@ -8,7 +8,7 @@ import {
 } from '../strategies/pricingStrategy.js';
 import { MARKET_EVENTS, marketEventBus } from '../events/MarketEventBus.js';
 
-function enrichCropWithFairPriceIndicator(crop) {
+export function enrichCropWithFairPriceIndicator(crop) {
   const validator = new BasePricingStrategy('CORRIDOR_INDICATOR');
   const benchmark =
     crop.bazaar_min_price != null

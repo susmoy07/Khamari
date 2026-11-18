@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  BadgeCheck,
   BarChart3,
   ClipboardCheck,
   Handshake,
@@ -12,14 +13,18 @@ import {
   Receipt as ReceiptIcon,
   Search,
   Sprout,
+  UserCircle,
   Wifi,
   WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeToggle } from '../../context/ThemeContext';
 import { useMarket } from '../../hooks/useMarket';
+import { API_BASE } from '../../lib/api';
 import { taka, timeAgo } from '../../lib/format';
 import OfferModal from '../../components/OfferModal';
+import ProfileView from '../../components/ProfileView';
+import PublicProfileModal from '../../components/PublicProfileModal';
 import ReceiptView from '../../components/ReceiptView';
 import {
   ComplianceView,
@@ -41,7 +46,8 @@ type TabId =
   | 'my-lots'
   | 'add-lot'
   | 'publish'
-  | 'compliance';
+  | 'compliance'
+  | 'profile';
 
 interface NavItem {
   id: TabId;
@@ -55,6 +61,7 @@ const BUYER_NAV: NavItem[] = [
   { id: 'tracker', label: 'Live Price Index', shortLabel: 'Prices', icon: BarChart3 },
   { id: 'deal-room', label: 'Deal Room', shortLabel: 'Deals', icon: Handshake },
   { id: 'orders', label: 'Orders & Receipts', shortLabel: 'Orders', icon: ReceiptIcon },
+  { id: 'profile', label: 'My Profile', shortLabel: 'Profile', icon: UserCircle },
 ];
 
 const FARMER_NAV: NavItem[] = [
@@ -62,12 +69,14 @@ const FARMER_NAV: NavItem[] = [
   { id: 'add-lot', label: 'Post Harvest Lot', shortLabel: 'Add Lot', icon: PlusCircle },
   { id: 'deal-room', label: 'Deal Room', shortLabel: 'Offers', icon: Handshake },
   { id: 'orders', label: 'Orders & Dispatches', shortLabel: 'Orders', icon: ReceiptIcon },
+  { id: 'profile', label: 'My Profile', shortLabel: 'Profile', icon: UserCircle },
 ];
 
 const COMMITTEE_NAV: NavItem[] = [
   { id: 'publish', label: 'Bazaar Verifications', shortLabel: 'Publish', icon: Megaphone },
   { id: 'tracker', label: 'Live Price Index', shortLabel: 'Prices', icon: BarChart3 },
   { id: 'compliance', label: 'Listing Compliance', shortLabel: 'Audit', icon: ClipboardCheck },
+  { id: 'profile', label: 'My Profile', shortLabel: 'Profile', icon: UserCircle },
 ];
 
 export default function WorkspaceApp({ user }: { user: User }) {
@@ -85,6 +94,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
   const [offerCropId, setOfferCropId] = useState<number | null>(null);
   const [selectedNegId, setSelectedNegId] = useState<number | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [publicProfileUserId, setPublicProfileUserId] = useState<number | null>(null);
 
   const offerCrop = m.crops.find((c) => c.id === offerCropId) ?? null;
   const activeTabTitle = nav.find((n) => n.id === tab)?.label ?? 'Khamari';
@@ -106,14 +116,14 @@ export default function WorkspaceApp({ user }: { user: User }) {
   return (
     <div className="min-h-screen bg-[#f4f7f4] text-slate-900 transition-colors duration-200 dark:bg-[#0c1322] dark:text-[#dce2f7]">
       {/* Desktop Hover-to-Expand Left Icon Rail */}
-      <aside className="glass-rail group fixed left-0 top-0 z-40 hidden h-screen w-16 flex-col justify-between overflow-hidden py-4 transition-all duration-300 ease-out hover:w-64 lg:flex">
+      <aside className="glass-rail group fixed left-0 top-0 z-40 hidden h-screen w-16 flex-col justify-between overflow-hidden py-4 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:w-64 hover:shadow-2xl hover:shadow-emerald-950/15 dark:hover:shadow-black/60 lg:flex">
         <div className="flex flex-col gap-6 px-2.5">
           {/* Brand Logo */}
           <div className="flex items-center gap-3 overflow-hidden px-1">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/25 transition-transform duration-300 group-hover:scale-105 dark:bg-emerald-500 dark:text-slate-950">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3 dark:from-emerald-400 dark:to-teal-500 dark:text-slate-950">
               <Sprout className="h-5 w-5" />
             </div>
-            <div className="flex flex-col whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="flex translate-x-1 flex-col whitespace-nowrap opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
               <span className="font-display text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Khamari
               </span>
@@ -135,14 +145,17 @@ export default function WorkspaceApp({ user }: { user: User }) {
                   type="button"
                   title={item.label}
                   onClick={() => setTab(item.id)}
-                  className={`relative flex items-center gap-3 overflow-hidden rounded-xl px-2.5 py-2.5 text-left transition-all duration-200 ${
+                  className={`group/item relative flex items-center gap-3 overflow-hidden rounded-xl px-2.5 py-2.5 text-left transition-all duration-200 active:scale-[0.98] ${
                     active
-                      ? 'bg-emerald-700 font-bold text-white shadow-md shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
-                      : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 dark:text-slate-300 dark:hover:bg-[#141b2b] dark:hover:text-white'
+                      ? 'bg-gradient-to-r from-emerald-700 to-teal-600 font-bold text-white shadow-md shadow-emerald-700/25 dark:from-emerald-500 dark:to-teal-400 dark:text-slate-950'
+                      : 'text-slate-600 hover:translate-x-0.5 hover:bg-emerald-50/90 hover:text-emerald-900 dark:text-slate-300 dark:hover:bg-[#141b2b] dark:hover:text-white'
                   }`}
                 >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  <span className="flex-1 whitespace-nowrap text-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  {active && (
+                    <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.9)]" />
+                  )}
+                  <item.icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover/item:scale-110" />
+                  <span className="flex-1 translate-x-1 whitespace-nowrap text-sm opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
                     {item.label}
                   </span>
                   {item.id === 'deal-room' && pendingDeals > 0 && (
@@ -150,7 +163,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
                       <span className="hidden rounded-full bg-amber-500 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-950 group-hover:inline-flex">
                         {pendingDeals}
                       </span>
-                      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-500 group-hover:hidden" />
+                      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-500 animate-ping group-hover:hidden" />
                     </>
                   )}
                 </button>
@@ -160,28 +173,44 @@ export default function WorkspaceApp({ user }: { user: User }) {
         </div>
 
         {/* Bottom User Profile & Sign Out */}
-        <div className="mx-2.5 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/90 p-2.5 dark:border-[#1e293b] dark:bg-[#141b2b]">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 font-mono text-xs font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
-              {initials}
+        <div className="mx-2.5 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/90 p-2.5 transition-colors duration-200 dark:border-[#1e293b] dark:bg-[#141b2b]">
+          <button
+            type="button"
+            onClick={() => setTab('profile')}
+            title="Open My Profile & ID Verification"
+            className="flex w-full items-center gap-2.5 rounded-lg p-1 text-left transition hover:bg-emerald-500/10"
+          >
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-emerald-100 font-mono text-xs font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
+              {user.avatar_url ? (
+                <img
+                  src={`${API_BASE}${user.avatar_url}`}
+                  alt={user.full_name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                initials
+              )}
             </div>
-            <div className="min-w-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <div className="truncate text-xs font-bold text-slate-900 dark:text-white">
-                {user.full_name}
+            <div className="min-w-0 flex-1 translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+              <div className="flex items-center gap-1 truncate text-xs font-bold text-slate-900 dark:text-white">
+                <span className="truncate">{user.full_name}</span>
+                {Boolean(user.is_verified && user.email_verified) && (
+                  <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                )}
               </div>
               <div className="truncate font-mono text-[10px] text-slate-500 dark:text-slate-400">
                 {user.region}
               </div>
             </div>
-          </div>
+          </button>
           <button
             type="button"
             onClick={logout}
             title="Sign out"
-            className="mt-2.5 flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+            className="group/logout mt-2.5 flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-200 hover:bg-rose-50 active:scale-95 dark:text-rose-400 dark:hover:bg-rose-950/30"
           >
-            <LogOut className="h-4 w-4 shrink-0" />
-            <span className="whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <LogOut className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover/logout:-translate-x-0.5" />
+            <span className="translate-x-1 whitespace-nowrap opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
               Sign out
             </span>
           </button>
@@ -191,12 +220,12 @@ export default function WorkspaceApp({ user }: { user: User }) {
       {/* Main Layout Container (offset by w-16 on desktop) */}
       <div className="flex min-h-screen flex-col lg:pl-16">
         {/* Desktop & Mobile Top Glassmorphic Header */}
-        <header className="glass-panel sticky top-0 z-30 border-b px-4 py-2.5 lg:mx-6 lg:mt-3 lg:rounded-2xl lg:border">
+        <header className="glass-panel sticky top-0 z-30 border-b px-4 py-2.5 shadow-sm lg:mx-6 lg:mt-3 lg:rounded-2xl lg:border">
           <div className="flex items-center justify-between gap-3">
             {/* Left: Mobile Brand + Desktop Title / Search */}
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="flex items-center gap-2 lg:hidden">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white dark:bg-emerald-500 dark:text-slate-950">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950">
                   <Sprout className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
@@ -214,8 +243,8 @@ export default function WorkspaceApp({ user }: { user: User }) {
                   {activeTabTitle}
                 </h1>
                 {tab === 'market' && (
-                  <div className="relative max-w-md flex-1">
-                    <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <div className="relative max-w-md flex-1 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-within:max-w-lg">
+                    <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors" />
                     <input
                       className="input rounded-full py-1.5 pl-9 text-xs"
                       placeholder="Search crop, mandi, farmer, or Lot #KHM..."
@@ -229,7 +258,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
 
             {/* Right: Mandi Pill, Theme Toggle, Live Status, Mobile Sign Out */}
             <div className="flex shrink-0 items-center gap-2">
-              <div className="hidden items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs dark:border-[#1e293b] dark:bg-[#070e1d] md:flex">
+              <div className="hidden items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-xs transition-colors hover:border-emerald-300 dark:border-[#1e293b] dark:bg-[#070e1d] md:flex">
                 <MapPin className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-slate-500 dark:text-slate-400">Mandi:</span>
                 <strong className="text-slate-900 dark:text-white">{user.region}</strong>
@@ -238,7 +267,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
               <ThemeToggle />
 
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-mono text-[11px] font-bold ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-mono text-[11px] font-bold transition-colors ${
                   m.connected
                     ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300'
                     : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
@@ -256,9 +285,32 @@ export default function WorkspaceApp({ user }: { user: User }) {
 
               <button
                 type="button"
+                onClick={() => setTab('profile')}
+                title="My Profile & Verification"
+                className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 p-1 pr-2.5 text-xs font-semibold text-slate-700 transition-all hover:border-emerald-400 dark:border-[#1e293b] dark:bg-[#070e1d] dark:text-slate-200"
+              >
+                <span className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-emerald-100 font-mono text-[10px] font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
+                  {user.avatar_url ? (
+                    <img
+                      src={`${API_BASE}${user.avatar_url}`}
+                      alt={user.full_name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    initials
+                  )}
+                </span>
+                <span className="hidden sm:inline">Profile</span>
+                {Boolean(user.is_verified && user.email_verified) && (
+                  <BadgeCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                )}
+              </button>
+
+              <button
+                type="button"
                 onClick={logout}
                 aria-label="Sign out"
-                className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 dark:border-[#1e293b] dark:text-slate-300 dark:hover:bg-[#191f2f] lg:hidden"
+                className="rounded-xl border border-slate-200 p-2 text-slate-600 transition-all duration-200 hover:bg-slate-100 active:scale-95 dark:border-[#1e293b] dark:text-slate-300 dark:hover:bg-[#191f2f] lg:hidden"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -268,17 +320,24 @@ export default function WorkspaceApp({ user }: { user: User }) {
 
         {/* Live Bazaar Benchmarks Ticker Bar */}
         {m.benchmarks.length > 0 && (
-          <div className="mx-0 mt-2 flex gap-4 overflow-x-auto bg-emerald-950 px-4 py-2 font-mono text-xs text-emerald-100 no-scrollbar lg:mx-6 lg:rounded-xl">
-            <span className="shrink-0 font-bold text-amber-400">BAZAAR LIVE</span>
-            {m.benchmarks.map((b) => (
-              <span key={b.id} className="shrink-0 whitespace-nowrap">
-                {b.crop_category} ({b.bazaar_region}){' '}
-                <strong className="text-white">{taka(b.modal_price)}</strong>{' '}
-                <span className="text-emerald-300">
-                  [{taka(b.min_price)}-{taka(b.max_price)}]
-                </span>
-              </span>
-            ))}
+          <div className="mx-0 mt-2 flex items-center gap-4 overflow-hidden bg-emerald-950 px-4 py-2 font-mono text-xs text-emerald-100 shadow-sm lg:mx-6 lg:rounded-xl">
+            <span className="flex shrink-0 items-center gap-1.5 font-bold text-amber-400">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              BAZAAR LIVE
+            </span>
+            <div className="relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)]">
+              <div className={m.benchmarks.length > 1 ? 'animate-marquee items-center gap-6 whitespace-nowrap' : 'flex items-center gap-4 whitespace-nowrap'}>
+                {(m.benchmarks.length > 1 ? [...m.benchmarks, ...m.benchmarks] : m.benchmarks).map((b, idx) => (
+                  <span key={`${b.id}-${idx}`} className="shrink-0 whitespace-nowrap pr-2">
+                    {b.crop_category} ({b.bazaar_region}){' '}
+                    <strong className="text-white">{taka(b.modal_price)}</strong>{' '}
+                    <span className="text-emerald-300">
+                      [{taka(b.min_price)}-{taka(b.max_price)}]
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -300,6 +359,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
               benchmarks={m.benchmarks}
               searchQuery={searchQuery}
               onOffer={setOfferCropId}
+              onViewProfile={setPublicProfileUserId}
             />
           ) : tab === 'tracker' ? (
             <TrackerView benchmarks={m.benchmarks} crops={m.crops} />
@@ -311,6 +371,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
               onSelect={setSelectedNegId}
               onReceipt={setReceipt}
               onChanged={m.refresh}
+              onViewProfile={setPublicProfileUserId}
             />
           ) : tab === 'orders' ? (
             <OrdersView
@@ -318,6 +379,7 @@ export default function WorkspaceApp({ user }: { user: User }) {
               user={user}
               onReceipt={setReceipt}
               onChanged={m.refresh}
+              onViewProfile={setPublicProfileUserId}
             />
           ) : tab === 'my-lots' ? (
             <FarmerLotsView
@@ -337,14 +399,16 @@ export default function WorkspaceApp({ user }: { user: User }) {
             />
           ) : tab === 'publish' ? (
             <PublishView benchmarks={m.benchmarks} crops={m.crops} onPublished={m.refresh} />
+          ) : tab === 'compliance' ? (
+            <ComplianceView crops={m.crops} onViewProfile={setPublicProfileUserId} />
           ) : (
-            <ComplianceView crops={m.crops} />
+            <ProfileView user={user} onViewPublic={setPublicProfileUserId} />
           )}
         </main>
       </div>
 
       {/* Mobile Fixed Bottom Navigation Bar (Touch Ergonomic >= 64px) */}
-      <nav className="glass-panel fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav className="glass-panel fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] lg:hidden">
         <div
           className="grid"
           style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
@@ -356,22 +420,29 @@ export default function WorkspaceApp({ user }: { user: User }) {
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`relative flex min-h-[64px] flex-col items-center justify-center gap-1 text-[11px] font-semibold transition ${
+                className={`group relative flex min-h-[64px] flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
                   active
                     ? 'text-emerald-700 dark:text-emerald-400'
-                    : 'text-slate-500 dark:text-slate-400'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <span
-                  className={`flex h-7 w-12 items-center justify-center rounded-full transition ${
-                    active ? 'bg-emerald-100 dark:bg-emerald-500/20' : ''
+                  className={`absolute top-0 h-0.5 rounded-full bg-emerald-600 transition-all duration-300 dark:bg-emerald-400 ${
+                    active ? 'w-8 opacity-100' : 'w-0 opacity-0'
+                  }`}
+                />
+                <span
+                  className={`flex h-7 w-12 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    active
+                      ? '-translate-y-0.5 scale-105 bg-emerald-100 shadow-sm dark:bg-emerald-500/20'
+                      : 'group-hover:bg-slate-100/70 dark:group-hover:bg-slate-800/60'
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
                 </span>
                 <span>{item.shortLabel}</span>
                 {item.id === 'deal-room' && pendingDeals > 0 && (
-                  <span className="absolute right-[22%] top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 font-mono text-[10px] font-bold text-slate-950">
+                  <span className="absolute right-[22%] top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 font-mono text-[10px] font-bold text-slate-950 shadow-sm">
                     {pendingDeals}
                   </span>
                 )}
@@ -398,13 +469,22 @@ export default function WorkspaceApp({ user }: { user: User }) {
       {/* Slide-Over Digital Receipt Modal */}
       {receipt && (
         <div
-          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+          className="animate-backdrop fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
           onClick={() => setReceipt(null)}
         >
-          <div className="animate-fade-in w-full max-w-md pt-4" onClick={(e) => e.stopPropagation()}>
+          <div className="animate-modal-pop w-full max-w-md pt-4" onClick={(e) => e.stopPropagation()}>
             <ReceiptView receipt={receipt} onClose={() => setReceipt(null)} />
           </div>
         </div>
+      )}
+
+      {/* Public User Profile Modal */}
+      {publicProfileUserId !== null && (
+        <PublicProfileModal
+          userId={publicProfileUserId}
+          onClose={() => setPublicProfileUserId(null)}
+          onOfferCrop={(cropId) => setOfferCropId(cropId)}
+        />
       )}
     </div>
   );

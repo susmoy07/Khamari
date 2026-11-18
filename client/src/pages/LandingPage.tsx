@@ -3,10 +3,15 @@ import {
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
+  BarChart3,
   Building2,
   Check,
   CheckCircle2,
+  ChevronRight,
+  FileCheck2,
+  Handshake,
   Landmark,
+  LayoutGrid,
   Lock,
   ShieldCheck,
   Sprout,
@@ -23,10 +28,19 @@ import { ThemeToggle } from '../context/ThemeContext';
 import type { Benchmark, Crop, Role } from '../lib/types';
 
 type RegisterRole = Exclude<Role, 'ADMIN'>;
+type SectionId = 'overview' | 'orderbook' | 'features' | 'yield-edge' | 'ecosystem';
 
 interface LandingProps {
   onAuth: (mode: 'login' | 'register', role?: RegisterRole) => void;
 }
+
+const NAV_LINKS: { id: SectionId; href: string; label: string }[] = [
+  { id: 'overview', href: '#overview', label: 'Overview' },
+  { id: 'orderbook', href: '#orderbook', label: 'Live Orderbook' },
+  { id: 'features', href: '#features', label: 'Features' },
+  { id: 'yield-edge', href: '#yield-edge', label: 'Yield Edge' },
+  { id: 'ecosystem', href: '#ecosystem', label: 'Ecosystem' },
+];
 
 const FALLBACK_TICKERS = [
   { id: 1, crop_category: 'Potato (Diamond)', bazaar_region: 'Bogura', modal_price: 27, min_price: 24, max_price: 30, unit: 'KG' },
@@ -35,110 +49,184 @@ const FALLBACK_TICKERS = [
   { id: 4, crop_category: 'Tomato (Deshi)', bazaar_region: 'Rajshahi', modal_price: 40, min_price: 35, max_price: 46, unit: 'KG' },
 ];
 
+const FALLBACK_SUPPLY_ROWS = [
+  { id: 'KHM-902', crop: 'Kataribhog Fine Rice', origin: 'Dinajpur Central', volume: '4,800 KG', rate: '৳74.20/KG', status: 'FAIR CORRIDOR' },
+  { id: 'KHM-118', crop: 'Deshi Red Onion', origin: 'Pabna Sadar', volume: '1,850 KG', rate: '৳68.00/KG', status: 'BULK TIER' },
+  { id: 'KHM-442', crop: 'Diamond Cold Potato', origin: 'Bogura North', volume: '11,000 KG', rate: '৳26.50/KG', status: 'FAIR CORRIDOR' },
+];
+
 export default function LandingPage({ onAuth }: LandingProps) {
   const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);
   const [crops, setCrops] = useState<Crop[]>([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<SectionId>('overview');
 
   useEffect(() => {
     api.benchmarks().then(setBenchmarks).catch(() => undefined);
     api.crops({ status: 'AVAILABLE' }).then(setCrops).catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    const sections: SectionId[] = ['ecosystem', 'yield-edge', 'features', 'orderbook', 'overview'];
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 16);
+      if (window.scrollY < 120) {
+        setActiveSection('overview');
+        return;
+      }
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= 180) {
+          setActiveSection(id);
+          break;
+        }
+      }
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const tickerItems = benchmarks.length > 0 ? benchmarks : FALLBACK_TICKERS;
   const orderbookLots = crops.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-[#f4f7f4] text-slate-900 transition-colors duration-200 dark:bg-[#0c1322] dark:text-[#dce2f7]">
-      {/* Fixed Top Mandi Ticker + Glassmorphic Nav Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-[#1e293b] dark:bg-[#070e1d]/90">
-        {/* Live Mandi Ticker Strip */}
-        <div className="border-b border-slate-200/60 bg-slate-100/80 px-4 py-1.5 dark:border-[#1e293b] dark:bg-[#050913]">
-          <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 overflow-x-auto no-scrollbar">
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                High-Frequency Mandi Feed
-              </span>
-            </div>
-            <div className="flex items-center gap-5 font-mono text-[11px] whitespace-nowrap">
-              {tickerItems.map((b) => (
-                <span key={b.id} className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+    <div className="min-h-screen bg-[#f4f7f4] text-slate-900 transition-colors duration-300 dark:bg-[#0c1322] dark:text-[#dce2f7]">
+      {/* Live Mandi Ticker Strip (scrolls cleanly above the sticky floating nav) */}
+      <div className="border-b border-slate-200/60 bg-slate-100/80 px-4 py-1.5 dark:border-[#1e293b] dark:bg-[#050913]">
+        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4">
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse-glow" />
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              High-Frequency Mandi Feed
+            </span>
+          </div>
+          <div className="relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)]">
+            <div className="animate-marquee items-center gap-6 font-mono text-[11px] whitespace-nowrap">
+              {[...tickerItems, ...tickerItems].map((b, idx) => (
+                <span
+                  key={`${b.id}-${idx}`}
+                  className="flex items-center gap-1.5 pr-2 text-slate-600 transition-colors hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-300"
+                >
                   <strong className="text-slate-900 dark:text-white">{b.crop_category}</strong>
                   <span className="text-slate-400">({b.bazaar_region})</span>
-                  <span className="font-bold text-emerald-700 dark:text-emerald-400">{taka(b.modal_price)}/{b.unit}</span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                    {taka(b.modal_price)}/{b.unit}
+                  </span>
                   <span className="text-[10px] text-slate-400">
                     [{taka(b.min_price)}-{taka(b.max_price)}]
                   </span>
                 </span>
               ))}
             </div>
-            <div className="hidden shrink-0 items-center gap-1.5 font-mono text-[11px] md:flex">
-              <span className="text-slate-500 dark:text-slate-400">Bazaar Sync:</span>
-              <span className="font-bold text-emerald-700 dark:text-emerald-400">Active</span>
-            </div>
+          </div>
+          <div className="hidden shrink-0 items-center gap-1.5 font-mono text-[11px] md:flex">
+            <span className="text-slate-500 dark:text-slate-400">Bazaar Sync:</span>
+            <span className="font-bold text-emerald-700 dark:text-emerald-400">Active</span>
           </div>
         </div>
+      </div>
 
-        {/* Main Nav Bar */}
-        <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <a href="#overview" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600/15 text-emerald-700 ring-1 ring-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
-              <Sprout className="h-5 w-5" />
+      {/* Full-Bleed Top Navbar -> Smart Shrinking Floating-Pill Header */}
+      <header
+        className={`sticky top-0 z-50 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          isScrolled ? 'px-3 pt-2.5 sm:px-6 sm:pt-3' : 'px-0 pt-0'
+        }`}
+      >
+        <div
+          className={`mx-auto flex w-full items-center backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isScrolled
+              ? 'h-[54px] max-w-[1020px] rounded-[28px] border border-emerald-500/30 bg-white/90 px-3.5 shadow-[0_16px_40px_-10px_rgba(6,78,59,0.18)] sm:px-5 dark:border-emerald-400/25 dark:bg-[#070e1d]/90 dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.8),0_0_28px_-8px_rgba(16,185,129,0.24)]'
+              : 'h-16 max-w-[100vw] rounded-none border border-x-transparent border-t-transparent border-b-slate-200/80 bg-white/90 px-4 sm:px-6 lg:px-10 dark:border-b-[#1e293b] dark:bg-[#070e1d]/90'
+          }`}
+        >
+          <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-3">
+            <a href="#overview" className="group flex shrink-0 items-center gap-2.5">
+              <div
+                className={`flex items-center justify-center bg-emerald-600/15 text-emerald-700 ring-1 ring-emerald-500/30 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 group-hover:rotate-3 group-hover:shadow-md group-hover:shadow-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-400 ${
+                  isScrolled ? 'h-8 w-8 rounded-full' : 'h-10 w-10 rounded-xl'
+                }`}
+              >
+                <Sprout className={`transition-all duration-300 ${isScrolled ? 'h-4 w-4' : 'h-5 w-5'}`} />
+              </div>
+              <div className="flex flex-col leading-none">
+                <span
+                  className={`font-display font-extrabold tracking-tight text-slate-900 transition-all duration-300 dark:text-white ${
+                    isScrolled ? 'text-base' : 'text-lg'
+                  }`}
+                >
+                  Khamari
+                </span>
+                <span
+                  className={`overflow-hidden font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-700 transition-all duration-300 dark:text-emerald-400 ${
+                    isScrolled ? 'max-h-0 opacity-0' : 'max-h-4 opacity-100'
+                  }`}
+                >
+                  Agri Wholesale
+                </span>
+              </div>
+            </a>
+
+            <nav className="hidden items-center gap-1 rounded-full border border-slate-200/70 bg-slate-100/75 p-1 transition-all duration-300 dark:border-[#1e293b] dark:bg-[#0c1322]/85 lg:flex">
+              {NAV_LINKS.map((item) => {
+                const active = activeSection === item.id;
+                return (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`whitespace-nowrap rounded-full transition-all duration-300 ${
+                      isScrolled ? 'px-3 py-1.5 text-xs' : 'px-3.5 py-1.5 text-sm'
+                    } ${
+                      active
+                        ? 'bg-emerald-700 font-semibold text-white shadow-sm shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
+                        : 'font-medium text-slate-600 hover:bg-white/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#191f2f] dark:hover:text-white'
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
+            </nav>
+
+            <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+              <ThemeToggle compact />
+              <button
+                type="button"
+                onClick={() => onAuth('login')}
+                className={`whitespace-nowrap rounded-full font-semibold text-slate-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-100 active:translate-y-0 active:scale-95 dark:text-slate-200 dark:hover:bg-[#141b2b] ${
+                  isScrolled ? 'px-3.5 py-1.5 text-xs sm:text-sm' : 'px-4 py-2 text-sm'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => onAuth('register')}
+                className={`btn-primary group whitespace-nowrap rounded-full font-bold transition-all duration-300 ${
+                  isScrolled
+                    ? 'min-h-[36px] px-3.5 py-1.5 text-xs sm:text-sm'
+                    : 'min-h-[40px] px-4 py-2 text-sm'
+                }`}
+              >
+                <span>Launch Terminal</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
             </div>
-            <div className="flex flex-col leading-none">
-              <span className="font-display text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Khamari
-              </span>
-              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-                Agri Wholesale
-              </span>
-            </div>
-          </a>
-
-          <nav className="hidden items-center gap-1 lg:flex">
-            <a href="#overview" className="rounded-lg px-3.5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300">
-              Overview
-            </a>
-            <a href="#orderbook" className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#141b2b] dark:hover:text-white">
-              Live Orderbook
-            </a>
-            <a href="#yield-edge" className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#141b2b] dark:hover:text-white">
-              Yield Edge
-            </a>
-            <a href="#ecosystem" className="rounded-lg px-3.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#141b2b] dark:hover:text-white">
-              Ecosystem
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle compact />
-            <button
-              type="button"
-              onClick={() => onAuth('login')}
-              className="rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-[#141b2b]"
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => onAuth('register')}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-700/20 transition hover:bg-emerald-800 active:scale-95 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
-            >
-              <span>Launch Terminal</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
       <div id="overview" className="relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-80 w-[760px] -translate-x-1/2 rounded-full bg-emerald-400/15 blur-3xl dark:bg-emerald-500/10" />
-        <div className="pointer-events-none absolute right-0 top-40 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2">
+          <div className="animate-float-slow h-80 w-[760px] rounded-full bg-emerald-400/15 blur-3xl dark:bg-emerald-500/12" />
+        </div>
+        <div className="animate-float-slow pointer-events-none absolute right-0 top-40 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl [animation-delay:1.8s]" />
 
         <section className="relative z-10 mx-auto max-w-[1320px] px-4 pb-12 pt-8 sm:px-6 lg:px-8 lg:pt-12">
           {/* Top Status Pill */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="animate-fade-in mb-6 flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-white/90 px-3.5 py-1.5 shadow-sm backdrop-blur-sm dark:border-emerald-500/25 dark:bg-[#141b2b]">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
               <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
@@ -153,7 +241,7 @@ export default function LandingPage({ onAuth }: LandingProps) {
 
           {/* Hero Split */}
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
-            <div className="space-y-5 lg:col-span-7">
+            <div className="animate-fade-in stagger-1 space-y-5 lg:col-span-7">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-md bg-amber-100 px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
                   OTC Wholesale &amp; Institutional Hub
@@ -178,30 +266,32 @@ export default function LandingPage({ onAuth }: LandingProps) {
                 <button
                   type="button"
                   onClick={() => onAuth('register')}
-                  className="btn-primary px-6 py-3.5 text-base"
+                  className="btn-primary group px-6 py-3.5 text-base"
                 >
-                  <Zap className="h-5 w-5" />
-                  Launch Trading Terminal
+                  <Zap className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" />
+                  <span>Launch Trading Terminal</span>
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
-                <a href="#orderbook" className="btn-ghost px-6 py-3.5 text-base">
-                  Explore Live Orderbook
+                <a href="#orderbook" className="btn-ghost group px-6 py-3.5 text-base">
+                  <span>Explore Live Orderbook</span>
                 </a>
                 <button
                   type="button"
                   onClick={() => onAuth('login')}
-                  className="btn-amber px-5 py-3.5 text-base"
+                  className="btn-amber group px-5 py-3.5 text-base"
                 >
-                  Sign In
+                  <span>Sign In</span>
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
               </div>
             </div>
 
             {/* Right: KHAMARI_EXEC_PRO Live Orderbook Widget */}
-            <div id="orderbook" className="lg:col-span-5">
+            <div id="orderbook" className="animate-fade-in stagger-2 lg:col-span-5">
               <div className="card space-y-4 p-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-[#1e293b]">
                   <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse-glow" />
                     <span className="font-mono text-xs font-bold tracking-tight text-slate-800 dark:text-white">
                       KHAMARI_EXEC_PRO v2.6
                     </span>
@@ -222,7 +312,7 @@ export default function LandingPage({ onAuth }: LandingProps) {
                       return (
                         <div
                           key={c.id}
-                          className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 transition hover:bg-emerald-50/60 dark:bg-[#0c1322] dark:hover:bg-[#191f2f]"
+                          className="flex items-center justify-between gap-3 rounded-xl border border-transparent bg-slate-50 p-3 transition-all duration-300 hover:translate-x-1 hover:border-emerald-300/70 hover:bg-emerald-50/70 hover:shadow-md dark:bg-[#0c1322] dark:hover:border-emerald-500/30 dark:hover:bg-[#191f2f]"
                         >
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
@@ -254,7 +344,7 @@ export default function LandingPage({ onAuth }: LandingProps) {
                     FALLBACK_TICKERS.slice(0, 3).map((b) => (
                       <div
                         key={b.id}
-                        className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 dark:bg-[#0c1322]"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-transparent bg-slate-50 p-3 transition-all duration-300 hover:translate-x-1 hover:border-emerald-300/70 hover:bg-emerald-50/70 hover:shadow-md dark:bg-[#0c1322] dark:hover:border-emerald-500/30 dark:hover:bg-[#191f2f]"
                       >
                         <div>
                           <div className="font-display text-sm font-bold">{b.crop_category}</div>
@@ -276,7 +366,7 @@ export default function LandingPage({ onAuth }: LandingProps) {
                 </div>
 
                 {/* Smart Escrow Summary Strip */}
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 p-3.5 dark:bg-emerald-950/25">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 p-3.5 transition-colors duration-300 dark:bg-emerald-950/25">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-slate-900 dark:text-white">
                       <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -305,9 +395,10 @@ export default function LandingPage({ onAuth }: LandingProps) {
                 <button
                   type="button"
                   onClick={() => onAuth('login')}
-                  className="btn-primary w-full"
+                  className="btn-primary group w-full"
                 >
-                  Enter Live Deal Desk
+                  <span>Enter Live Deal Desk</span>
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
               </div>
             </div>
@@ -320,13 +411,16 @@ export default function LandingPage({ onAuth }: LandingProps) {
               { label: 'Live Alert Latency', value: '14ms', sub: 'Socket.io pub-sub updates', icon: Zap },
               { label: 'Regional Coverage', value: '64 Districts', sub: 'All 8 Divisions of Bangladesh', icon: Landmark },
               { label: 'Fair-Price Guard', value: '100%', sub: 'Bazaar Committee corridor check', icon: ShieldCheck },
-            ].map((k) => (
-              <div key={k.label} className="card p-5 hover:border-emerald-400/70">
+            ].map((k, idx) => (
+              <div
+                key={k.label}
+                className={`card group animate-fade-in p-5 hover:border-emerald-400/70 stagger-${idx + 1}`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     {k.label}
                   </span>
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 dark:bg-emerald-500/15 dark:text-emerald-400">
                     <k.icon className="h-4 w-4" />
                   </div>
                 </div>
@@ -342,7 +436,321 @@ export default function LandingPage({ onAuth }: LandingProps) {
         </section>
       </div>
 
-      {/* Section 2: The Institutional Yield Edge */}
+      {/* Section 2: Platform Features Bento Grid ("Cutting-Edge Wholesale Infrastructure") */}
+      <section
+        id="features"
+        className="border-t border-slate-200/70 bg-white/60 py-16 dark:border-[#1e293b] dark:bg-[#080f1e]"
+      >
+        <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 flex flex-col gap-2">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Fintech &amp; Mandi Architecture</span>
+            </div>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+              Cutting-Edge Wholesale Infrastructure
+            </h2>
+            <p className="max-w-2xl text-sm text-slate-600 sm:text-base dark:text-slate-400">
+              Engineered for high-tonnage agricultural liquidity with Bazaar-verified price corridors, real-time Socket.io deal rooms, and ACID settlement receipts.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+            {/* Module 1: Wholesale Supply Board (Span 7) */}
+            <div className="card flex flex-col justify-between p-6 md:col-span-7 hover:border-emerald-400/70">
+              <div>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+                      <LayoutGrid className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
+                        Wholesale Supply Board
+                      </h3>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Verified farmer &amp; cluster lots ready for prompt dispatch
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 font-mono text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{crops.length > 0 ? `${crops.length} LIVE LOTS` : '1,420 MT ACTIVE'}</span>
+                  </div>
+                </div>
+
+                {/* Interactive Mini Harvest Table */}
+                <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200/80 bg-slate-50/90 dark:border-[#1e293b] dark:bg-[#070e1d]">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200/80 bg-slate-100/90 font-mono text-[11px] uppercase text-slate-500 dark:border-[#1e293b] dark:bg-[#0d1527] dark:text-slate-400">
+                        <th className="p-3">Lot ID</th>
+                        <th className="p-3">Commodity</th>
+                        <th className="p-3">Origin Mandi</th>
+                        <th className="p-3 text-right">Volume</th>
+                        <th className="p-3 text-right">Indicative Rate</th>
+                        <th className="p-3 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200/70 dark:divide-[#1e293b]">
+                      {crops.length > 0
+                        ? crops.slice(0, 3).map((c) => (
+                            <tr
+                              key={c.id}
+                              className="transition-colors hover:bg-emerald-50/60 dark:hover:bg-[#141b2b]"
+                            >
+                              <td className="p-3 font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                #KHM-{c.id}
+                              </td>
+                              <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                                {c.crop_category}
+                              </td>
+                              <td className="p-3 text-slate-600 dark:text-slate-300">
+                                {c.bazaar_region}
+                              </td>
+                              <td className="p-3 text-right font-mono text-slate-700 dark:text-slate-200">
+                                {num(c.quantity_available)} {c.unit}
+                              </td>
+                              <td className="p-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                {taka(c.base_price_per_unit)}/{c.unit}
+                              </td>
+                              <td className="p-3 text-center">
+                                <span
+                                  className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold ${
+                                    c.fair_price_indicator.isValid
+                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
+                                  }`}
+                                >
+                                  {c.fair_price_indicator.isValid
+                                    ? c.bulk_threshold_qty
+                                      ? 'BULK TIER'
+                                      : 'FAIR CORRIDOR'
+                                    : 'WATCH'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        : FALLBACK_SUPPLY_ROWS.map((r) => (
+                            <tr
+                              key={r.id}
+                              className="transition-colors hover:bg-emerald-50/60 dark:hover:bg-[#141b2b]"
+                            >
+                              <td className="p-3 font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                #{r.id}
+                              </td>
+                              <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                                {r.crop}
+                              </td>
+                              <td className="p-3 text-slate-600 dark:text-slate-300">{r.origin}</td>
+                              <td className="p-3 text-right font-mono text-slate-700 dark:text-slate-200">
+                                {r.volume}
+                              </td>
+                              <td className="p-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                                {r.rate}
+                              </td>
+                              <td className="p-3 text-center">
+                                <span
+                                  className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold ${
+                                    r.status === 'BULK TIER'
+                                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
+                                      : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                  }`}
+                                >
+                                  {r.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-3 dark:border-[#1e293b]">
+                <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                  BSTI Certified QA · Real-Time Fair-Price Corridor Checked
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onAuth('register', 'BUYER')}
+                  className="group inline-flex items-center gap-1 font-display text-xs font-bold text-emerald-700 transition-colors hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-white"
+                >
+                  <span>Access Full Wholesale Supply Pool</span>
+                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Module 2: Live Mandi Price Index (Span 5) */}
+            <div className="card flex flex-col justify-between p-6 md:col-span-5 hover:border-emerald-400/70">
+              <div>
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/15 text-teal-700 dark:bg-cyan-500/20 dark:text-cyan-300">
+                      <BarChart3 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
+                        Mandi Price Index
+                      </h3>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Regional Min / Modal / Max Corridor
+                      </span>
+                    </div>
+                  </div>
+                  <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                    +2.14% 24H
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2 rounded-xl border border-slate-200/80 bg-slate-900 p-4 text-white dark:border-[#1e293b] dark:bg-[#070e1d]">
+                  <div className="flex items-center justify-between font-mono text-xs">
+                    <span className="text-slate-400">Aggregate Fair-Price Index</span>
+                    <span className="text-xs font-extrabold text-emerald-400">64 MANDIS SYNCED</span>
+                  </div>
+                  <svg className="h-24 w-full overflow-visible" viewBox="0 0 320 85">
+                    <defs>
+                      <linearGradient id="landingNeonGrad" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.45" />
+                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M0,65 Q35,50 70,60 T140,35 T210,42 T270,18 T320,8 L320,85 L0,85 Z"
+                      fill="url(#landingNeonGrad)"
+                    />
+                    <path
+                      d="M0,65 Q35,50 70,60 T140,35 T210,42 T270,18 T320,8"
+                      fill="none"
+                      stroke="#34d399"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                    <circle className="animate-pulse" cx="320" cy="8" fill="#34d399" r="4.5" />
+                  </svg>
+                  <div className="flex items-center justify-between pt-1 font-mono text-[10px] text-slate-400">
+                    <span>MON</span>
+                    <span>WED</span>
+                    <span>FRI</span>
+                    <span className="font-bold text-emerald-400">TODAY (LIVE)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t border-slate-200/80 pt-3 font-mono text-xs dark:border-[#1e293b]">
+                <span className="text-slate-500 dark:text-slate-400">
+                  Tracked Hubs: <strong className="text-slate-900 dark:text-white">8 Divisions</strong>
+                </span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  Socket.io Broadcast: &lt;14ms
+                </span>
+              </div>
+            </div>
+
+            {/* Module 3: Bilateral Deal Room (Span 4) */}
+            <div className="card flex flex-col justify-between p-6 md:col-span-4 hover:border-emerald-400/70">
+              <div className="flex flex-col gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                  <Handshake className="h-5 w-5" />
+                </div>
+                <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
+                  Bilateral Deal Room
+                </h3>
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                  Real-time Socket.io RFQ countering. Negotiate quantity, unit pricing, and dispatch terms with instant below-floor protection warnings.
+                </p>
+                <div className="mt-2 rounded-xl border border-amber-500/30 bg-amber-50/80 p-3 dark:bg-[#070e1d]">
+                  <div className="mb-1 flex items-center justify-between font-mono text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      LIVE RFQ CONCURRENT
+                    </span>
+                    <span>1m ago</span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-900 dark:text-white">
+                    Bogura Potato Lot Countered at ৳27.50/KG
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onAuth('login')}
+                className="group mt-6 inline-flex items-center gap-1.5 font-display text-xs font-bold text-emerald-700 transition-colors hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-white"
+              >
+                <span>Open Bilateral Negotiation Desk</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+
+            {/* Module 4: Waybills & Digital Receipts (Span 4) */}
+            <div className="card flex flex-col justify-between p-6 md:col-span-4 hover:border-emerald-400/70">
+              <div className="flex flex-col gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300">
+                  <FileCheck2 className="h-5 w-5" />
+                </div>
+                <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
+                  Waybills &amp; Digital Receipts
+                </h3>
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                  Accepting a deal triggers ACID InnoDB row-locked stock deduction, Strategy bulk discounts, and Factory-generated Gate-Pass &amp; Tax receipts.
+                </p>
+                <div className="mt-2 rounded-xl border border-cyan-500/30 bg-cyan-50/80 p-3 dark:bg-[#070e1d]">
+                  <div className="mb-1 flex items-center justify-between font-mono text-[11px] font-bold text-cyan-700 dark:text-cyan-300">
+                    <span>ATOMIC CHECKOUT ENGINE</span>
+                    <span>InnoDB Row Lock</span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-900 dark:text-slate-200">
+                    Zero-Oversell &amp; Verifiable Gate-Pass
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onAuth('register', 'BUYER')}
+                className="group mt-6 inline-flex items-center gap-1.5 font-display text-xs font-bold text-cyan-700 transition-colors hover:text-cyan-900 dark:text-cyan-300 dark:hover:text-white"
+              >
+                <span>Inspect Receipt Protocol</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+
+            {/* Module 5: Bazaar Corridor & QC Hub (Span 4) */}
+            <div className="card flex flex-col justify-between p-6 md:col-span-4 hover:border-emerald-400/70">
+              <div className="flex flex-col gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <h3 className="font-display text-lg font-bold text-slate-900 dark:text-white">
+                  Bazaar Corridor &amp; QC Hub
+                </h3>
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                  Local Bazaar Committees publish verified daily min/modal/max prices per district while automated auditing flags off-corridor offers live.
+                </p>
+                <div className="mt-2 rounded-xl border border-emerald-500/30 bg-emerald-50/80 p-3 dark:bg-[#070e1d]">
+                  <div className="mb-1 flex items-center justify-between font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                    <span>CORRIDOR COMPLIANCE GUARD</span>
+                    <span>100% Audited</span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-900 dark:text-slate-200">
+                    Automatic Below-Floor Farmer Protection
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onAuth('register', 'BAZAAR_COMMITTEE')}
+                className="group mt-6 inline-flex items-center gap-1.5 font-display text-xs font-bold text-emerald-700 transition-colors hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-white"
+              >
+                <span>Connect Regional Mandi</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: The Institutional Yield Edge */}
       <section id="yield-edge" className="border-y border-slate-200/70 bg-slate-100/70 py-14 dark:border-[#1e293b] dark:bg-[#070e1d]">
         <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -359,10 +767,10 @@ export default function LandingPage({ onAuth }: LandingProps) {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Traditional Mandi Trading */}
-            <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-6 dark:border-rose-500/25 dark:bg-rose-950/20">
+            <div className="group rounded-2xl border border-rose-200 bg-rose-50/70 p-6 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-500/10 dark:border-rose-500/25 dark:bg-rose-950/20">
               <div className="flex items-center justify-between border-b border-rose-200 pb-4 dark:border-rose-500/20">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-700 transition-transform duration-300 group-hover:scale-110 dark:bg-rose-500/20 dark:text-rose-400">
                     <TrendingDown className="h-5 w-5" />
                   </div>
                   <div>
@@ -396,10 +804,10 @@ export default function LandingPage({ onAuth }: LandingProps) {
             </div>
 
             {/* Khamari Exchange Protocol */}
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6 dark:border-emerald-500/25 dark:bg-emerald-950/20">
+            <div className="group rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/15 dark:border-emerald-500/25 dark:bg-emerald-950/20">
               <div className="flex items-center justify-between border-b border-emerald-200 pb-4 dark:border-emerald-500/20">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 transition-transform duration-300 group-hover:scale-110 dark:bg-emerald-500/20 dark:text-emerald-400">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div>
@@ -479,9 +887,9 @@ export default function LandingPage({ onAuth }: LandingProps) {
               accent: 'emerald',
             },
           ].map((p) => (
-            <div key={p.role} className="card flex flex-col justify-between p-6 hover:-translate-y-1 hover:border-emerald-400">
+            <div key={p.role} className="card group flex flex-col justify-between p-6 hover:border-emerald-400">
               <div>
-                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 ${
                   p.accent === 'amber'
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
                     : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
@@ -509,18 +917,247 @@ export default function LandingPage({ onAuth }: LandingProps) {
               <button
                 type="button"
                 onClick={() => onAuth('register', p.role)}
-                className="btn-ghost mt-6 w-full justify-between"
+                className="btn-ghost group/btn mt-6 w-full justify-between"
               >
                 <span>{p.cta}</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
               </button>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="border-t border-slate-200/80 py-6 text-center font-mono text-xs text-slate-500 dark:border-[#1e293b] dark:text-slate-400">
-        Khamari Agricultural Marketplace · Built with Repository, Observer/Pub-Sub, Strategy &amp; Factory Patterns
+      {/* Section 5: 5-Step End-to-End Execution Workflow ("From Mandi Yard to Factory Gate") */}
+      <section className="border-t border-slate-200/70 bg-white/70 py-16 dark:border-[#1e293b] dark:bg-[#080f1e]">
+        <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 flex flex-col gap-1.5">
+            <span className="font-mono text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+              End-to-End Escrow Workflow
+            </span>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+              From Mandi Yard to Factory Gate
+            </h2>
+            <p className="max-w-xl text-sm text-slate-600 dark:text-slate-400">
+              A transparent, fair-price guarded execution pipeline handling wholesale harvests seamlessly from farm upload to verified receipt.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              {
+                step: '01',
+                title: 'Harvest Listed',
+                desc: 'Farmer uploads harvest batch on mobile with photo preview, grade, volume, and bulk discount tier.',
+                icon: Sprout,
+              },
+              {
+                step: '02',
+                title: 'Price Discovery',
+                desc: 'Ask and bid rates are validated in real time against published Bazaar Committee min-modal-max floors.',
+                icon: BarChart3,
+              },
+              {
+                step: '03',
+                title: 'Live Deal Room',
+                desc: 'Buyer and producer negotiate quantity and rate in an isolated Socket.io deal thread with live alerts.',
+                icon: Handshake,
+              },
+              {
+                step: '04',
+                title: 'Atomic Stock Lock',
+                desc: 'Accepting a deal executes an InnoDB row-locked transaction and applies Strategy bulk discounts.',
+                icon: Lock,
+              },
+            ].map((w) => (
+              <div
+                key={w.step}
+                className="card flex flex-col gap-3 p-5 hover:border-emerald-400/70"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/15 font-mono text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    {w.step}
+                  </span>
+                  <w.icon className="h-5 w-5 text-slate-400" />
+                </div>
+                <h3 className="mt-1 font-display text-base font-bold text-slate-900 dark:text-white">
+                  {w.title}
+                </h3>
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                  {w.desc}
+                </p>
+              </div>
+            ))}
+
+            {/* Highlighted Step 05 */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-emerald-400/50 bg-gradient-to-b from-emerald-900 to-slate-950 p-5 text-white shadow-[0_12px_32px_rgba(16,185,129,0.22)] transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400 font-mono text-xs font-extrabold text-slate-950 shadow">
+                  05
+                </span>
+                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              </div>
+              <h3 className="mt-1 font-display text-base font-bold text-emerald-200">
+                Instant Digital Receipt
+              </h3>
+              <p className="text-xs leading-relaxed text-slate-300">
+                Factory pattern generates a printable Wholesale Gate-Pass or Institutional Procurement Receipt with Bazaar snapshot.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom Call-to-Action Banner */}
+      <section className="relative overflow-hidden border-t border-slate-200/70 bg-gradient-to-b from-slate-900 via-[#081523] to-slate-950 py-20 text-center text-white dark:border-[#1e293b]">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/15 blur-[130px]" />
+        <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center gap-5 px-4 sm:px-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.45)]">
+            <Zap className="h-7 w-7 stroke-[2.2]" />
+          </div>
+          <h2 className="font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+            Institutional Agro-Trading{' '}
+            <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300 bg-clip-text text-transparent">
+              Awaits
+            </span>
+          </h2>
+          <p className="max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
+            Open an institutional trading account, list regional harvests directly from the field, or connect your district Bazaar Committee desk today.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <button
+              type="button"
+              onClick={() => onAuth('register')}
+              className="btn-primary group rounded-xl px-7 py-3.5 text-sm font-bold sm:text-base"
+            >
+              <span>Complete Institutional Registration</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onAuth('login')}
+              className="btn rounded-xl border border-slate-700 bg-slate-900/80 px-6 py-3.5 text-sm font-semibold text-white hover:border-emerald-500/50 hover:bg-slate-800 sm:text-base"
+            >
+              Trader Terminal Sign In
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Stitch 5-Column Footer with Regulatory Credentials */}
+      <footer className="relative z-10 w-full border-t border-slate-800/80 bg-slate-950 text-slate-300">
+        <div className="mx-auto max-w-[1320px] px-4 py-14 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-10 pb-12 md:grid-cols-2 lg:grid-cols-5">
+            {/* Columns 1-2: Brand & Live Engine Status */}
+            <div className="flex flex-col gap-4 lg:col-span-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 shadow-md shadow-emerald-500/20">
+                  <Sprout className="h-5 w-5 stroke-[2.2]" />
+                </div>
+                <span className="font-display text-xl font-bold text-white">
+                  Khamari Agro Terminal
+                </span>
+              </div>
+              <p className="max-w-sm text-sm leading-relaxed text-slate-400">
+                High-yield wholesale agricultural marketplace unifying regional mandi price discovery, verified farmer harvests, real-time Socket.io deal rooms, and ACID settlement receipts across Bangladesh.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                  HIGH FREQUENCY ENGINE v2.6 ONLINE
+                </span>
+              </div>
+            </div>
+
+            {/* Column 3: Mandi Nodes */}
+            <div className="flex flex-col gap-3">
+              <span className="font-display text-xs font-semibold uppercase tracking-widest text-slate-200">
+                Mandi Nodes
+              </span>
+              <div className="flex flex-col gap-2 text-xs text-slate-400">
+                {[
+                  ['Bogura Grain Depot', 'LIVE'],
+                  ['Khatunganj, Chattogram', '98.4%'],
+                  ['Badamtoli, Dhaka', 'LIVE'],
+                  ['Rajshahi Produce Hub', 'LIVE'],
+                  ['Dinajpur Rice Node', 'LIVE'],
+                ].map(([node, status]) => (
+                  <span key={node} className="flex items-center justify-between gap-2">
+                    <span>{node}</span>
+                    <span className="font-mono font-semibold text-emerald-400">{status}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Column 4: Protocol Architecture */}
+            <div className="flex flex-col gap-3">
+              <span className="font-display text-xs font-semibold uppercase tracking-widest text-slate-200">
+                Protocol Architecture
+              </span>
+              <div className="flex flex-col gap-2 text-xs text-slate-400">
+                <a className="transition-colors hover:text-emerald-400" href="#features">
+                  Wholesale Supply Board
+                </a>
+                <a className="transition-colors hover:text-emerald-400" href="#orderbook">
+                  Live Harvest Orderbook
+                </a>
+                <a className="transition-colors hover:text-emerald-400" href="#features">
+                  Bilateral Deal Room
+                </a>
+                <a className="transition-colors hover:text-emerald-400" href="#yield-edge">
+                  Institutional Yield Edge
+                </a>
+                <a className="transition-colors hover:text-emerald-400" href="#ecosystem">
+                  Ecosystem Roles
+                </a>
+              </div>
+            </div>
+
+            {/* Column 5: Regulatory Governance */}
+            <div className="flex flex-col gap-3">
+              <span className="font-display text-xs font-semibold uppercase tracking-widest text-slate-200">
+                Regulatory Governance
+              </span>
+              <div className="flex flex-col gap-2.5">
+                <div className="rounded-lg border border-slate-800 bg-slate-900 p-2.5">
+                  <span className="block text-xs font-semibold text-slate-200">BB-BACS Interbank</span>
+                  <span className="font-mono text-[11px] text-slate-400">RTGS Regulated Escrow</span>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-900 p-2.5">
+                  <span className="block text-xs font-semibold text-slate-200">BSTI Class-A Agro</span>
+                  <span className="font-mono text-[11px] text-slate-400">Certified QA Standards</span>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-900 p-2.5">
+                  <span className="block text-xs font-semibold text-slate-200">Mandi Directorate</span>
+                  <span className="font-mono text-[11px] text-slate-400">Agricultural Marketing Board</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-800/80 pt-8 text-xs text-slate-500 md:flex-row">
+            <span>
+              © 2026 Khamari Agro Wholesale Terminal Limited · Built with Repository, Observer/Pub-Sub, Strategy &amp; Factory Patterns.
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-5">
+              <a className="transition-colors hover:text-slate-300" href="#overview">
+                Terminal Disclosures
+              </a>
+              <a className="transition-colors hover:text-slate-300" href="#features">
+                Market Surveillance Policy
+              </a>
+              <a className="transition-colors hover:text-slate-300" href="#yield-edge">
+                Fair-Price Framework
+              </a>
+              <a className="transition-colors hover:text-slate-300" href="#ecosystem">
+                SLA &amp; Arbitration
+              </a>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

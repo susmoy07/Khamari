@@ -9,6 +9,8 @@ interface AuthCtx {
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
+  updateUser: (u: User) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -49,7 +51,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     disconnectSocket();
   }, []);
 
-  return <Ctx.Provider value={{ user, loading, login, register, logout }}>{children}</Ctx.Provider>;
+  const updateUser = useCallback((nextUser: User) => {
+    setUser(nextUser);
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const d = await api.me();
+    setUser(d.user);
+  }, []);
+
+  return (
+    <Ctx.Provider value={{ user, loading, login, register, logout, updateUser, refreshUser }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {

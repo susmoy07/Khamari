@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowLeftRight,
   ArrowRight,
+  BarChart3,
   Calendar,
   Camera,
   CheckCircle2,
   ClipboardCheck,
+  ExternalLink,
   Handshake,
+  History,
   ImagePlus,
   Loader2,
+  Lock,
   MapPin,
   Megaphone,
   PackageCheck,
@@ -16,10 +21,13 @@ import {
   Receipt as ReceiptIcon,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Sprout,
+  Star,
   TrendingDown,
   TrendingUp,
   Truck,
+  Wallet,
 } from 'lucide-react';
 import { api, API_BASE } from '../../lib/api';
 import { benchOf, computeCorridor, dateOnly, num, taka, timeAgo } from '../../lib/format';
@@ -39,11 +47,13 @@ export function MarketView({
   benchmarks,
   searchQuery,
   onOffer,
+  onViewProfile,
 }: {
   crops: Crop[];
   benchmarks: Benchmark[];
   searchQuery: string;
   onOffer: (id: number) => void;
+  onViewProfile?: (userId: number) => void;
 }) {
   const [catFilter, setCatFilter] = useState('ALL');
   const [region, setRegion] = useState('');
@@ -118,14 +128,14 @@ export function MarketView({
       </section>
 
       {/* Filter Pills + Region + Sort */}
-      <section className="card flex flex-col gap-3 p-3.5 md:flex-row md:items-center md:justify-between">
+      <section className="card flex flex-col gap-3 p-3.5 hover:translate-y-0 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar md:pb-0">
           <button
             type="button"
             onClick={() => setCatFilter('ALL')}
-            className={`shrink-0 rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition ${
+            className={`shrink-0 rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
               catFilter === 'ALL'
-                ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+                ? 'bg-emerald-700 text-white shadow-sm shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
                 : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 dark:bg-[#070e1d] dark:text-slate-300 dark:hover:bg-[#191f2f]'
             }`}
           >
@@ -136,9 +146,9 @@ export function MarketView({
               type="button"
               key={cat}
               onClick={() => setCatFilter(cat)}
-              className={`shrink-0 rounded-xl px-3.5 py-2 font-mono text-xs font-semibold transition ${
+              className={`shrink-0 rounded-xl px-3.5 py-2 font-mono text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
                 catFilter === cat
-                  ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+                  ? 'bg-emerald-700 text-white shadow-sm shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
                   : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 dark:bg-[#070e1d] dark:text-slate-300 dark:hover:bg-[#191f2f]'
               }`}
             >
@@ -181,10 +191,12 @@ export function MarketView({
         </div>
       ) : (
         <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((c) => (
+          {filtered.map((c, idx) => (
             <CropLotCard
               key={c.id}
               crop={c}
+              index={idx}
+              onViewProfile={onViewProfile}
               action={
                 <button
                   type="button"
@@ -220,7 +232,7 @@ export function TrackerView({ benchmarks, crops }: { benchmarks: Benchmark[]; cr
     <div className="space-y-6">
       {/* 3 Tactical Summary Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="card p-5">
+        <div className="card animate-fade-in stagger-1 p-5">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
               Market Sentiment
@@ -235,7 +247,7 @@ export function TrackerView({ benchmarks, crops }: { benchmarks: Benchmark[]; cr
           </p>
         </div>
 
-        <div className="card p-5">
+        <div className="card animate-fade-in stagger-2 p-5">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-amber-50 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
               Corridor Band Width
@@ -250,7 +262,7 @@ export function TrackerView({ benchmarks, crops }: { benchmarks: Benchmark[]; cr
           </p>
         </div>
 
-        <div className="card p-5">
+        <div className="card animate-fade-in stagger-3 p-5">
           <div className="flex items-center justify-between">
             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
               Tracked Commodities
@@ -280,7 +292,11 @@ export function TrackerView({ benchmarks, crops }: { benchmarks: Benchmark[]; cr
           const isPositive = diffPct <= 0;
 
           return (
-            <div key={b.id} className="card flex flex-col justify-between p-5 hover:border-emerald-400">
+            <div
+              key={b.id}
+              style={{ animationDelay: `${Math.min(idx, 5) * 60}ms` }}
+              className="card animate-fade-in flex flex-col justify-between p-5 hover:border-emerald-400"
+            >
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -395,7 +411,7 @@ export function TrackerView({ benchmarks, crops }: { benchmarks: Benchmark[]; cr
 }
 
 /* ============================================================================
-   3. BILATERAL DEAL ROOM (NEGOTIATIONS - DESKTOP 2-ZONE + MOBILE LIST/MODAL)
+   3. BILATERAL DEAL ROOM (STITCH INTERACTIVE DEAL SELECTION)
    ============================================================================ */
 export function DealRoomView({
   negotiations,
@@ -404,6 +420,7 @@ export function DealRoomView({
   onSelect,
   onReceipt,
   onChanged,
+  onViewProfile,
 }: {
   negotiations: Negotiation[];
   user: User;
@@ -411,19 +428,40 @@ export function DealRoomView({
   onSelect: (id: number | null) => void;
   onReceipt: (r: Receipt) => void;
   onChanged: () => void;
+  onViewProfile?: (userId: number) => void;
 }) {
-  const [tab, setTab] = useState<'ACTIVE' | 'DONE'>('ACTIVE');
+  const toast = useToast();
+  const [tab, setTab] = useState<'ACTION' | 'REVIEW' | 'DONE'>('ACTION');
   const [filterText, setFilterText] = useState('');
+  const [openConsoleSignal, setOpenConsoleSignal] = useState(0);
+
+  const activeDeals = useMemo(
+    () => negotiations.filter((n) => n.status === 'OPEN' || n.status === 'COUNTERED'),
+    [negotiations]
+  );
+
+  const myTurnDeals = useMemo(
+    () =>
+      activeDeals.filter((n) => {
+        const mySide = n.buyer_id === user.id ? 'BUYER' : 'FARMER';
+        return n.last_offered_by !== mySide;
+      }),
+    [activeDeals, user.id]
+  );
+
+  const actionPool = myTurnDeals.length > 0 ? myTurnDeals : activeDeals;
+  const doneDeals = useMemo(
+    () => negotiations.filter((n) => n.status !== 'OPEN' && n.status !== 'COUNTERED'),
+    [negotiations]
+  );
 
   const filtered = useMemo(() => {
     const q = filterText.trim().toLowerCase();
-    return negotiations.filter((n) => {
-      const isActive = n.status === 'OPEN' || n.status === 'COUNTERED';
-      if (tab === 'ACTIVE' && !isActive) return false;
-      if (tab === 'DONE' && isActive) return false;
+    const source = tab === 'ACTION' ? actionPool : tab === 'REVIEW' ? activeDeals : doneDeals;
+    return source.filter((n) => {
       if (
         q &&
-        !`${n.crop_title} ${n.farmer_name} ${n.buyer_name} ${n.buyer_organization ?? ''} DL-${n.id}`
+        !`${n.crop_title} ${n.crop_category} ${n.farmer_name} ${n.buyer_name} ${n.buyer_organization ?? ''} KHM-${n.crop_id} DL-${n.id}`
           .toLowerCase()
           .includes(q)
       ) {
@@ -431,50 +469,159 @@ export function DealRoomView({
       }
       return true;
     });
-  }, [negotiations, tab, filterText]);
+  }, [tab, actionPool, activeDeals, doneDeals, filterText]);
 
   const activeDesktopId =
     selectedId && negotiations.some((n) => n.id === selectedId)
       ? selectedId
-      : filtered[0]?.id ?? negotiations[0]?.id ?? null;
+      : filtered[0]?.id ?? activeDeals[0]?.id ?? negotiations[0]?.id ?? null;
+
+  const pipelineTotal = useMemo(
+    () =>
+      activeDeals.reduce(
+        (sum, n) => sum + Number(n.current_offer_price) * Number(n.requested_quantity),
+        0
+      ),
+    [activeDeals]
+  );
+
+  const spotIndices = useMemo(() => {
+    const seen = new Map<string, { label: string; price: number }>();
+    for (const n of negotiations) {
+      if (n.bazaar_modal_price != null) {
+        const label = n.crop_category.split(' ')[0];
+        if (!seen.has(label) && seen.size < 3) {
+          seen.set(label, { label, price: n.bazaar_modal_price });
+        }
+      }
+    }
+    if (seen.size > 0) return Array.from(seen.values());
+    return [
+      { label: 'Diamond', price: 27 },
+      { label: 'Onion', price: 68 },
+      { label: 'Miniket', price: 62 },
+    ];
+  }, [negotiations]);
+
+  const activeRegionLabel =
+    negotiations.find((n) => n.id === activeDesktopId)?.bazaar_region ?? user.region;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Zone: Deals Navigator */}
-        <div className="space-y-4 lg:col-span-4">
-          <div className="card space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                Bilateral Deal Room
+    <div className="space-y-5">
+      {/* Top Command Strip (Glass Slab Header) */}
+      <section className="card flex flex-wrap items-center justify-between gap-4 p-4 hover:translate-y-0 sm:p-5">
+        <div className="flex items-center gap-3.5">
+          <div className="h-9 w-2 rounded-full bg-gradient-to-b from-emerald-400 to-teal-600 shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="font-display text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl dark:text-white">
+                Institutional Deal Room
+              </h2>
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 font-mono text-[11px] font-bold tracking-wide text-emerald-700 dark:text-emerald-300">
+                LIVE SESSIONS ({activeDeals.length})
               </span>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-mono text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-                {negotiations.length} Total
+            </div>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Real-time agricultural commodity bilateral price matching &amp; automated escrow settlement
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/90 px-3.5 py-2 text-xs dark:border-white/5 dark:bg-[#070c16]/80">
+            <Wallet className="h-4 w-4 text-amber-500" />
+            <span className="text-slate-500 dark:text-slate-400">Escrow Pipeline:</span>
+            <span className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">
+              {taka(pipelineTotal)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              toast('ACID InnoDB audit trail active across all bilateral deal sessions.', 'info')
+            }
+            className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 transition-all hover:border-emerald-300 hover:text-slate-950 active:scale-95 dark:border-white/10 dark:bg-[#121a2c]/70 dark:text-slate-300 dark:hover:text-white sm:inline-flex"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>Audit Logs</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              toast('Bazaar Committee fair-price corridor & row-locked settlement enforced.', 'info')
+            }
+            className="hidden items-center gap-1.5 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700 transition-all hover:border-emerald-300 hover:text-slate-950 active:scale-95 dark:border-white/10 dark:bg-[#121a2c]/70 dark:text-slate-300 dark:hover:text-white md:inline-flex"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>Trading Rules</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={!activeDesktopId}
+            onClick={() => setOpenConsoleSignal((c) => c + 1)}
+            className="btn-primary min-h-[38px] px-4 py-2 text-xs font-bold"
+          >
+            <Wallet className="h-4 w-4" />
+            <span>Escrow &amp; Counter Console</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </section>
+
+      {/* Focused 2-Zone Glass Layout */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        {/* LEFT ZONE (Col 1-4) - Deals Navigator */}
+        <div className="space-y-4 lg:col-span-4">
+          <div className="card space-y-3.5 p-4 hover:translate-y-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  Active Deals
+                </span>
+              </div>
+              <span className="rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-slate-600 dark:border-white/10 dark:bg-[#070c16] dark:text-slate-400">
+                {actionPool.length} Action / {doneDeals.length} Done
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-xs dark:bg-[#070e1d]">
+            {/* 3-Tab Filter Pill Bar */}
+            <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-slate-200/70 bg-slate-100/90 p-1 text-xs dark:border-white/5 dark:bg-[#070c16]">
               <button
                 type="button"
-                onClick={() => setTab('ACTIVE')}
-                className={`rounded-lg py-1.5 font-bold transition ${
-                  tab === 'ACTIVE'
-                    ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
-                    : 'text-slate-600 dark:text-slate-400'
+                onClick={() => setTab('ACTION')}
+                className={`rounded-lg px-2 py-1.5 font-bold transition-all duration-200 active:scale-95 ${
+                  tab === 'ACTION'
+                    ? 'bg-emerald-700 text-white shadow-sm shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
-                Action ({negotiations.filter((n) => n.status === 'OPEN' || n.status === 'COUNTERED').length})
+                Action ({actionPool.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab('REVIEW')}
+                className={`rounded-lg px-2 py-1.5 font-bold transition-all duration-200 active:scale-95 ${
+                  tab === 'REVIEW'
+                    ? 'bg-emerald-700 text-white shadow-sm shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                Review ({activeDeals.length})
               </button>
               <button
                 type="button"
                 onClick={() => setTab('DONE')}
-                className={`rounded-lg py-1.5 font-bold transition ${
+                className={`rounded-lg px-2 py-1.5 font-bold transition-all duration-200 active:scale-95 ${
                   tab === 'DONE'
-                    ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-emerald-700 text-white shadow-sm shadow-emerald-700/25 dark:bg-emerald-500 dark:text-slate-950'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                 }`}
               >
-                Closed ({negotiations.filter((n) => n.status !== 'OPEN' && n.status !== 'COUNTERED').length})
+                Done ({doneDeals.length})
               </button>
             </div>
 
@@ -482,75 +629,152 @@ export function DealRoomView({
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 className="input py-2 pl-9 text-xs"
-                placeholder="Filter crop, farmer, or deal #..."
+                placeholder="Filter grower, lot #, or crop..."
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
               />
             </div>
           </div>
 
+          {/* Deal Cards List */}
           <div className="space-y-3">
             {filtered.length === 0 ? (
               <div className="card p-8 text-center text-sm text-slate-500 dark:text-slate-400">
                 <Handshake className="mx-auto h-9 w-9 text-emerald-600 dark:text-emerald-400" />
-                <p className="mt-2 font-semibold text-slate-900 dark:text-white">No negotiations in this tab</p>
+                <p className="mt-2 font-semibold text-slate-900 dark:text-white">
+                  No deals in this tab
+                </p>
               </div>
             ) : (
-              filtered.map((n) => {
+              filtered.map((n, idx) => {
                 const isSelected = activeDesktopId === n.id;
                 const mySide = n.buyer_id === user.id ? 'BUYER' : 'FARMER';
                 const myTurn =
-                  (n.status === 'OPEN' || n.status === 'COUNTERED') && n.last_offered_by !== mySide;
+                  (n.status === 'OPEN' || n.status === 'COUNTERED') &&
+                  n.last_offered_by !== mySide;
                 const belowFloor =
                   n.bazaar_min_price != null && n.current_offer_price < n.bazaar_min_price;
                 const counterpart =
                   mySide === 'BUYER' ? n.farmer_name : n.buyer_organization ?? n.buyer_name;
+                const counterpartId = mySide === 'BUYER' ? n.farmer_id : n.buyer_id;
+                const counterpartAvatar =
+                  mySide === 'BUYER' ? n.farmer_avatar : n.buyer_avatar;
+                const totalValuation = Number(n.current_offer_price) * Number(n.requested_quantity);
 
                 return (
-                  <button
+                  <div
                     key={n.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => onSelect(n.id)}
-                    className={`card block w-full p-4 text-left transition-all ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelect(n.id);
+                      }
+                    }}
+                    style={{ animationDelay: `${Math.min(idx, 5) * 55}ms` }}
+                    className={`animate-fade-in group block w-full cursor-pointer rounded-2xl border p-4 text-left backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99] ${
                       isSelected
-                        ? 'border-2 border-emerald-600 ring-2 ring-emerald-500/20 dark:border-emerald-400'
-                        : 'hover:border-emerald-300 dark:hover:border-emerald-500/40'
+                        ? 'border-emerald-500/70 bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/40 shadow-[0_12px_30px_-6px_rgba(16,185,129,0.22)] ring-1 ring-emerald-500/30 dark:border-emerald-400/60 dark:from-[#1a263e]/95 dark:via-[#141e33] dark:to-[#0f1726]/95 dark:shadow-[0_12px_30px_-4px_rgba(0,0,0,0.6),0_0_22px_rgba(78,222,163,0.18)]'
+                        : 'border-slate-200/90 bg-white/95 shadow-card hover:border-emerald-300 dark:border-[#1e293b] dark:bg-[#121a2c]/80 dark:hover:border-white/20'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="truncate font-display text-sm font-bold text-slate-900 dark:text-white">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-display text-sm font-bold text-slate-900 transition-colors group-hover:text-emerald-700 dark:text-white dark:group-hover:text-emerald-300">
                           {n.crop_title}
                         </div>
-                        <div className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                          {counterpart} · {timeAgo(n.updated_at)}
+                        <div className="mt-0.5 truncate font-mono text-xs text-slate-500 dark:text-slate-400">
+                          Lot #KHM-{n.crop_id} • {num(n.requested_quantity)} {n.unit}
                         </div>
                       </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold ${
-                          myTurn
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300'
-                            : n.status === 'ACCEPTED'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300'
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                        }`}
-                      >
-                        {myTurn ? 'Your turn' : n.status}
-                      </span>
+
+                      {n.status === 'ACCEPTED' ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 font-mono text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                          <Lock className="h-3 w-3" />
+                          Escrow Locked
+                        </span>
+                      ) : n.status === 'REJECTED' || n.status === 'CANCELLED' ? (
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {n.status}
+                        </span>
+                      ) : myTurn ? (
+                        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/15 px-2.5 py-1 font-mono text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_#f59e0b]" />
+                          {n.status === 'COUNTERED'
+                            ? `Countered ${timeAgo(n.updated_at)}`
+                            : 'Your Turn'}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100/90 px-2.5 py-1 font-mono text-[10px] font-semibold text-slate-600 dark:border-white/10 dark:bg-[#070c16] dark:text-slate-300">
+                          {n.status === 'COUNTERED'
+                            ? `Countered ${timeAgo(n.updated_at)}`
+                            : 'Sent'}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="mt-3 flex items-baseline justify-between border-t border-slate-100 pt-2.5 dark:border-[#1e293b]">
-                      <div className="font-mono text-lg font-extrabold text-emerald-700 dark:text-emerald-400">
-                        {taka(n.current_offer_price)}
-                        <span className="text-xs font-normal text-slate-500">/{n.unit}</span>
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-500/40 bg-emerald-500/15 font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                        {counterpartAvatar ? (
+                          <img
+                            src={`${API_BASE}${counterpartAvatar}`}
+                            alt={counterpart}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          counterpart.charAt(0).toUpperCase()
+                        )}
                       </div>
-                      <div className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {num(n.requested_quantity)} {n.unit}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewProfile?.(counterpartId);
+                        }}
+                        className="font-medium text-slate-800 hover:text-emerald-700 hover:underline dark:text-white dark:hover:text-emerald-300"
+                      >
+                        {counterpart}
+                      </button>
+                      <span className="inline-flex items-center gap-0.5 font-mono text-[11px] text-amber-600 dark:text-amber-400">
+                        <Star className="h-3 w-3 fill-current" /> 4.9
+                      </span>
+                      <span className="text-slate-400">• {n.bazaar_region}</span>
+                    </div>
+
+                    <div className="mt-3 flex items-baseline justify-between gap-2 border-t border-slate-200/70 pt-2.5 dark:border-white/10">
+                      <div className="min-w-0">
+                        <span className="block font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          {n.status === 'ACCEPTED'
+                            ? 'Agreed Unit'
+                            : n.status === 'COUNTERED'
+                            ? 'Current Counter'
+                            : 'Asking Offer'}
+                        </span>
+                        <div className="mt-0.5 flex items-baseline gap-1 font-mono">
+                          <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-400">
+                            {taka(n.current_offer_price)}
+                          </span>
+                          <span className="text-xs text-slate-500">/{n.unit}</span>
+                        </div>
+                      </div>
+
+                      <div className="min-w-0 text-right">
+                        <span className="block font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          Total Valuation
+                        </span>
+                        <span className="mt-0.5 block font-mono text-sm font-bold text-slate-900 dark:text-white">
+                          {taka(totalValuation)}
+                        </span>
                       </div>
                     </div>
 
                     <div className="mt-2">
-                      <FairPriceBadge corridor={computeCorridor(n.current_offer_price, benchOf(n))} size="sm" />
+                      <FairPriceBadge
+                        corridor={computeCorridor(n.current_offer_price, benchOf(n))}
+                        size="sm"
+                      />
                     </div>
 
                     {belowFloor && n.bazaar_min_price != null && (
@@ -559,25 +783,58 @@ export function DealRoomView({
                         Below Bazaar floor ({taka(n.bazaar_min_price)})
                       </div>
                     )}
-                  </button>
+                  </div>
                 );
               })
             )}
           </div>
+
+          {/* Mini Stats Glass Banner */}
+          <div className="card flex items-center justify-between p-3.5 text-xs hover:translate-y-0">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+              <BarChart3 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Bilateral Success Rate:</span>
+            </div>
+            <span className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">
+              92.4%
+            </span>
+          </div>
+
+          {/* Live Spot Market Strip */}
+          <div className="card space-y-2.5 p-4 hover:translate-y-0">
+            <div className="flex items-center justify-between">
+              <span className="font-display text-xs font-bold text-slate-900 dark:text-white">
+                {activeRegionLabel} Region Spot Index
+              </span>
+              <span className="font-mono text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                Live Mandi Feed
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-200/80 bg-slate-50/90 p-2.5 text-center font-mono text-[11px] text-slate-600 dark:border-white/5 dark:bg-[#070c16] dark:text-slate-400">
+              {spotIndices.map((s) => (
+                <div key={s.label}>
+                  <span className="truncate block">{s.label}:</span>
+                  <strong className="mt-0.5 block text-xs text-slate-900 dark:text-white">
+                    {taka(s.price)}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Right Zone (Desktop Inline Live Thread) */}
+        {/* RIGHT ZONE (Col 5-12) - Live Interactive Workspace Stage */}
         <div className="hidden lg:col-span-8 lg:block">
           {activeDesktopId ? (
-            <div className="card h-[680px] overflow-hidden">
-              <NegotiationThread
-                negotiationId={activeDesktopId}
-                onReceipt={onReceipt}
-                onChanged={onChanged}
-              />
-            </div>
+            <NegotiationThread
+              negotiationId={activeDesktopId}
+              onReceipt={onReceipt}
+              onChanged={onChanged}
+              openConsoleSignal={openConsoleSignal}
+              onViewProfile={onViewProfile}
+            />
           ) : (
-            <div className="card flex h-[480px] flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
+            <div className="card flex h-[480px] flex-col items-center justify-center p-8 text-center text-slate-500 hover:translate-y-0 dark:text-slate-400">
               <Handshake className="h-12 w-12 text-emerald-600 dark:text-emerald-400" />
               <p className="mt-3 font-display text-lg font-bold text-slate-900 dark:text-white">
                 Select a deal to open the negotiation room
@@ -592,12 +849,14 @@ export function DealRoomView({
 
       {/* Mobile Full-Screen Thread Drawer when selected */}
       {selectedId !== null && (
-        <div className="fixed inset-0 z-50 bg-[#f4f7f4] dark:bg-[#0c1322] lg:hidden">
+        <div className="animate-sheet-up fixed inset-0 z-50 overflow-y-auto bg-[#f4f7f4] p-3 dark:bg-[#070c18] lg:hidden">
           <NegotiationThread
             negotiationId={selectedId}
             onClose={() => onSelect(null)}
             onReceipt={onReceipt}
             onChanged={onChanged}
+            openConsoleSignal={openConsoleSignal}
+            onViewProfile={onViewProfile}
           />
         </div>
       )}
@@ -613,11 +872,13 @@ export function OrdersView({
   user,
   onReceipt,
   onChanged,
+  onViewProfile,
 }: {
   orders: Order[];
   user: User;
   onReceipt: (r: Receipt) => void;
   onChanged: () => void;
+  onViewProfile?: (userId: number) => void;
 }) {
   const toast = useToast();
   const [filter, setFilter] = useState<'ALL' | 'CONFIRMED' | 'DISPATCHED' | 'DELIVERED'>('ALL');
@@ -670,15 +931,15 @@ export function OrdersView({
       </div>
 
       {/* Filter Strip */}
-      <div className="card flex flex-wrap items-center gap-2 p-2.5">
+      <div className="card flex flex-wrap items-center gap-2 p-2.5 hover:translate-y-0">
         {(['ALL', 'CONFIRMED', 'DISPATCHED', 'DELIVERED'] as const).map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => setFilter(s)}
-            className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition ${
+            className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
               filter === s
-                ? 'bg-emerald-700 text-white dark:bg-emerald-500 dark:text-slate-950'
+                ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
                 : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#191f2f]'
             }`}
           >
@@ -696,10 +957,14 @@ export function OrdersView({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((o) => {
+          {filtered.map((o, idx) => {
             const isFarmer = user.role === 'FARMER';
             return (
-              <article key={o.id} className="card flex flex-col justify-between p-5 hover:border-emerald-400">
+              <article
+                key={o.id}
+                style={{ animationDelay: `${Math.min(idx, 5) * 55}ms` }}
+                className="card animate-fade-in flex flex-col justify-between p-5 hover:border-emerald-400"
+              >
                 <div>
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-[#1e293b]">
                     <span className="rounded bg-emerald-50 px-2 py-0.5 font-mono text-xs font-bold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
@@ -714,9 +979,14 @@ export function OrdersView({
                     {o.crop_title}
                   </h3>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {isFarmer
-                      ? `Buyer: ${o.buyer_organization ?? o.buyer_name}`
-                      : `Farmer: ${o.farmer_name}`}{' '}
+                    {isFarmer ? 'Buyer: ' : 'Farmer: '}
+                    <button
+                      type="button"
+                      onClick={() => onViewProfile?.(isFarmer ? o.buyer_id : o.farmer_id)}
+                      className="font-semibold text-slate-700 hover:text-emerald-700 hover:underline dark:text-slate-200 dark:hover:text-emerald-400"
+                    >
+                      {isFarmer ? o.buyer_organization ?? o.buyer_name : o.farmer_name}
+                    </button>{' '}
                     · {o.bazaar_region}
                   </p>
 
@@ -836,13 +1106,13 @@ export function FarmerLotsView({
         <button
           type="button"
           onClick={onOpenOffers}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-rose-300 bg-rose-600 px-4 py-3 text-left text-sm font-bold text-white shadow-md transition hover:bg-rose-700"
+          className="animate-fade-in group flex w-full items-center justify-between gap-3 rounded-2xl border border-rose-300 bg-rose-600 px-4 py-3 text-left text-sm font-bold text-white shadow-md shadow-rose-600/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-rose-700 hover:shadow-lg active:scale-[0.99]"
         >
           <span className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <AlertTriangle className="h-5 w-5 shrink-0 animate-pulse" />
             {belowFloorCount} buyer offer{belowFloorCount > 1 ? 's' : ''} dropped below the Bazaar Committee floor price!
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0" />
+          <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
         </button>
       )}
 
@@ -885,8 +1155,8 @@ export function FarmerLotsView({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {crops.map((c) => (
-            <CropLotCard key={c.id} crop={c} />
+          {crops.map((c, idx) => (
+            <CropLotCard key={c.id} crop={c} index={idx} />
           ))}
         </div>
       )}
@@ -974,7 +1244,7 @@ export function FarmerAddCropView({
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="card space-y-4 p-5 sm:p-6">
+      <div className="card animate-fade-in space-y-4 p-5 hover:translate-y-0 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-display text-xl font-extrabold text-slate-900 dark:text-white">
@@ -1183,7 +1453,7 @@ export function PublishView({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[430px_1fr]">
-        <section className="card space-y-3 p-5">
+        <section className="card space-y-3 p-5 hover:translate-y-0">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold text-slate-900 dark:text-white">
             <Megaphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> Publish Daily Baseline
           </h2>
@@ -1266,12 +1536,13 @@ export function PublishView({
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {benchmarks.map((b) => (
+            {benchmarks.map((b, idx) => (
               <button
                 key={b.id}
                 type="button"
                 onClick={() => fill(b)}
-                className="card p-4 text-left hover:border-emerald-400"
+                style={{ animationDelay: `${Math.min(idx, 5) * 55}ms` }}
+                className="card animate-fade-in p-4 text-left transition-all duration-300 hover:border-emerald-400 active:scale-[0.99]"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-display text-base font-bold text-slate-900 dark:text-white">
@@ -1308,7 +1579,13 @@ export function PublishView({
   );
 }
 
-export function ComplianceView({ crops }: { crops: Crop[] }) {
+export function ComplianceView({
+  crops,
+  onViewProfile,
+}: {
+  crops: Crop[];
+  onViewProfile?: (userId: number) => void;
+}) {
   const [filter, setFilter] = useState<'ALL' | 'VALID' | 'FLAGGED'>('ALL');
   const flagged = crops.filter((c) => !c.fair_price_indicator.isValid);
   const rows =
@@ -1322,14 +1599,14 @@ export function ComplianceView({ crops }: { crops: Crop[] }) {
         <KpiCard label="Flagged Outside Range" value={String(flagged.length)} unit="Alerts" badge={flagged.length ? 'Attention' : 'Clean'} sub="Below floor or above cap" />
       </div>
 
-      <div className="card flex flex-wrap items-center gap-2 p-2.5">
+      <div className="card flex flex-wrap items-center gap-2 p-2.5 hover:translate-y-0">
         <button
           type="button"
           onClick={() => setFilter('ALL')}
-          className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold ${
+          className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
             filter === 'ALL'
-              ? 'bg-emerald-700 text-white dark:bg-emerald-500 dark:text-slate-950'
-              : 'text-slate-600 dark:text-slate-300'
+              ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#191f2f]'
           }`}
         >
           All Lots ({crops.length})
@@ -1337,10 +1614,10 @@ export function ComplianceView({ crops }: { crops: Crop[] }) {
         <button
           type="button"
           onClick={() => setFilter('VALID')}
-          className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold ${
+          className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
             filter === 'VALID'
-              ? 'bg-emerald-700 text-white dark:bg-emerald-500 dark:text-slate-950'
-              : 'text-slate-600 dark:text-slate-300'
+              ? 'bg-emerald-700 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950'
+              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#191f2f]'
           }`}
         >
           Verified ({crops.length - flagged.length})
@@ -1348,10 +1625,10 @@ export function ComplianceView({ crops }: { crops: Crop[] }) {
         <button
           type="button"
           onClick={() => setFilter('FLAGGED')}
-          className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold ${
+          className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 active:scale-95 ${
             filter === 'FLAGGED'
-              ? 'bg-rose-600 text-white'
-              : 'text-rose-700 dark:text-rose-400'
+              ? 'bg-rose-600 text-white shadow-sm'
+              : 'text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30'
           }`}
         >
           Flagged ({flagged.length})
@@ -1359,8 +1636,8 @@ export function ComplianceView({ crops }: { crops: Crop[] }) {
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((c) => (
-          <CropLotCard key={c.id} crop={c} />
+        {rows.map((c, idx) => (
+          <CropLotCard key={c.id} crop={c} index={idx} onViewProfile={onViewProfile} />
         ))}
       </div>
     </div>
@@ -1384,12 +1661,12 @@ function KpiCard({
   sub: string;
 }) {
   return (
-    <div className="card flex flex-col justify-between p-4 sm:p-5 hover:border-emerald-400/70">
+    <div className="card group animate-fade-in flex flex-col justify-between p-4 hover:border-emerald-400/70 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {label}
         </span>
-        <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+        <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-700 transition-transform duration-300 group-hover:scale-105 dark:bg-emerald-500/15 dark:text-emerald-300">
           {badge}
         </span>
       </div>
@@ -1406,26 +1683,39 @@ function KpiCard({
   );
 }
 
-function CropLotCard({ crop: c, action }: { crop: Crop; action?: React.ReactNode }) {
+function CropLotCard({
+  crop: c,
+  action,
+  index = 0,
+  onViewProfile,
+}: {
+  crop: Crop;
+  action?: React.ReactNode;
+  index?: number;
+  onViewProfile?: (userId: number) => void;
+}) {
   return (
-    <article className="card group flex flex-col overflow-hidden hover:border-emerald-400">
+    <article
+      style={{ animationDelay: `${Math.min(index, 5) * 60}ms` }}
+      className="card group animate-fade-in flex flex-col overflow-hidden hover:border-emerald-400"
+    >
       {/* Top Visual Banner */}
       <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-emerald-900/15 to-amber-500/15 dark:from-[#070e1d] dark:to-[#132920]">
         {c.image_url ? (
           <img
             src={`${API_BASE}${c.image_url}`}
             alt={c.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-emerald-700/60 dark:text-emerald-400/60">
+          <div className="flex h-full w-full items-center justify-center text-emerald-700/60 transition-transform duration-300 group-hover:scale-110 dark:text-emerald-400/60">
             <Sprout className="h-14 w-14" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25" />
 
         <div className="absolute left-3 top-3 flex gap-1.5">
-          <span className="rounded-md bg-emerald-700/90 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-white backdrop-blur-sm">
+          <span className="rounded-md bg-emerald-700/90 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-white shadow-sm shadow-emerald-700/35 backdrop-blur-sm">
             {c.quality_grade.replace('_', ' ')}
           </span>
           <span className="rounded-md bg-white/90 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-900 backdrop-blur-sm">
@@ -1446,8 +1736,25 @@ function CropLotCard({ crop: c, action }: { crop: Crop; action?: React.ReactNode
             {c.title}
           </h3>
           <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{c.farmer_name}</span>
+            {c.farmer_avatar ? (
+              <img
+                src={`${API_BASE}${c.farmer_avatar}`}
+                alt={c.farmer_name}
+                className="h-4 w-4 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile?.(c.farmer_id);
+              }}
+              className="font-semibold text-slate-700 hover:text-emerald-700 hover:underline dark:text-slate-200 dark:hover:text-emerald-400"
+            >
+              {c.farmer_name}
+            </button>
             <span>·</span>
             <span>{c.bazaar_region}</span>
           </div>

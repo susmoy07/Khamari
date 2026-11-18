@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServerConnection } from '../config/db.js';
+import { ensureUserProfileColumns } from './migrateProfile.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +13,7 @@ export async function initializeDatabase() {
   const connection = await createServerConnection();
   try {
     await connection.query(sql);
+    await ensureUserProfileColumns();
     console.log('[DB:Init] Schema verified/initialized successfully.');
   } finally {
     await connection.end();

@@ -3,21 +3,55 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 185, 129, 0.35) transparent;
+  }
   html,
   body,
   #root {
     min-height: 100%;
   }
   body {
-    @apply bg-[#f4f7f4] font-sans text-slate-900 antialiased transition-colors duration-200 dark:bg-[#0c1322] dark:text-[#dce2f7];
+    @apply bg-[#f4f7f4] font-sans text-slate-900 antialiased transition-colors duration-300 dark:bg-[#0c1322] dark:text-[#dce2f7];
     -webkit-tap-highlight-color: transparent;
   }
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgba(100, 116, 139, 0.32);
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 150, 105, 0.55);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.75);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.55);
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -25,30 +59,120 @@
   }
 }
 
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sheetSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-12px) scale(1.04);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+  }
+}
+
 @layer components {
   .btn {
-    @apply inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply relative inline-flex min-h-[46px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
   }
   .btn-primary {
-    @apply btn bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 hover:bg-emerald-800 hover:shadow-md dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400;
+    @apply btn bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 text-white shadow-sm shadow-emerald-700/25 hover:brightness-105 hover:shadow-[0_10px_28px_-6px_rgba(16,185,129,0.55)] dark:from-emerald-400 dark:via-emerald-500 dark:to-teal-400 dark:text-slate-950;
+  }
+  .btn-primary::after,
+  .btn-amber::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%) skewX(-20deg);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.28),
+      transparent
+    );
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .btn-primary:hover::after,
+  .btn-amber:hover::after {
+    transform: translateX(120%) skewX(-20deg);
   }
   .btn-amber {
-    @apply btn bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20 hover:bg-amber-400 hover:shadow-md;
+    @apply btn bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-slate-950 shadow-sm shadow-amber-500/25 hover:brightness-105 hover:shadow-[0_10px_26px_-6px_rgba(245,158,11,0.5)];
   }
   .btn-ghost {
-    @apply btn border border-slate-200 bg-white/90 text-slate-800 backdrop-blur-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-[#191f2f] dark:text-slate-200 dark:hover:bg-[#232a3a];
+    @apply btn border border-slate-200 bg-white/90 text-slate-800 backdrop-blur-sm hover:border-emerald-500/40 hover:bg-white hover:shadow-md dark:border-slate-700 dark:bg-[#191f2f] dark:text-slate-200 dark:hover:border-emerald-500/40 dark:hover:bg-[#232a3a];
   }
   .btn-danger-ghost {
-    @apply btn min-h-[40px] border border-rose-200 bg-white/80 py-2 text-sm text-rose-700 backdrop-blur-sm hover:bg-rose-50 dark:border-rose-500/30 dark:bg-rose-950/30 dark:text-rose-300 dark:hover:bg-rose-950/60;
+    @apply btn min-h-[40px] border border-rose-200 bg-white/80 py-2 text-sm text-rose-700 backdrop-blur-sm hover:border-rose-300 hover:bg-rose-50 hover:shadow-sm dark:border-rose-500/30 dark:bg-rose-950/30 dark:text-rose-300 dark:hover:bg-rose-950/60;
   }
   .btn-sm {
-    @apply inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ease-out disabled:opacity-50;
+    @apply relative inline-flex min-h-[36px] items-center justify-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] disabled:opacity-50;
   }
   .card {
-    @apply rounded-2xl border border-slate-200/90 bg-white/95 shadow-card backdrop-blur-md transition-all duration-300 ease-out dark:border-[#1e293b] dark:bg-[#141b2b]/95 dark:shadow-obsidian-card;
+    @apply rounded-2xl border border-slate-200/90 bg-white/95 shadow-card backdrop-blur-md transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:shadow-xl dark:border-[#1e293b] dark:bg-[#141b2b]/95 dark:shadow-obsidian-card dark:hover:shadow-[0_14px_34px_-10px_rgba(16,185,129,0.16)];
   }
   .glass-panel {
-    @apply border border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-sm dark:border-[#1e293b] dark:bg-[#0d1527]/90;
+    @apply border border-slate-200/80 bg-white/85 backdrop-blur-xl shadow-sm transition-all duration-300 dark:border-[#1e293b] dark:bg-[#0d1527]/90;
   }
   .glass-rail {
     @apply border-r border-slate-200/90 bg-white/95 backdrop-blur-xl shadow-lg dark:border-[#1a273f] dark:bg-[#050913]/95;
@@ -60,7 +184,45 @@
     @apply mb-1 block font-mono text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400;
   }
   .animate-fade-in {
-    animation: fadeInUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: fadeInUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-backdrop {
+    animation: modalBackdropIn 0.24s ease-out both;
+  }
+  .animate-modal-pop {
+    animation: modalPopIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-sheet-up {
+    animation: sheetSlideUp 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-toast-in {
+    animation: toastSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-marquee {
+    display: flex;
+    width: max-content;
+    animation: marqueeScroll 32s linear infinite;
+  }
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+  .animate-float-slow {
+    animation: floatSlow 6s ease-in-out infinite;
+  }
+  .animate-pulse-glow {
+    animation: pulseGlow 2.4s ease-in-out infinite;
+  }
+  .stagger-1 {
+    animation-delay: 60ms;
+  }
+  .stagger-2 {
+    animation-delay: 130ms;
+  }
+  .stagger-3 {
+    animation-delay: 200ms;
+  }
+  .stagger-4 {
+    animation-delay: 270ms;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -68,5 +230,21 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fade-in,
+  .animate-backdrop,
+  .animate-modal-pop,
+  .animate-sheet-up,
+  .animate-toast-in,
+  .animate-marquee,
+  .animate-float-slow,
+  .animate-pulse-glow {
+    animation: none !important;
   }
 }

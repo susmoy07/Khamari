@@ -10,6 +10,28 @@ export interface User {
   organization_name: string | null;
   region: string;
   is_verified: boolean | number;
+  email_verified?: boolean | number;
+  avatar_url?: string | null;
+  bio?: string | null;
+  nid_number?: string | null;
+  address?: string | null;
+  specialty_crops?: string | null;
+  years_experience?: number | null;
+  created_at?: string;
+}
+
+export interface PublicProfileStats {
+  total_listings: number;
+  active_listings: number;
+  total_orders: number;
+  delivered_orders: number;
+  published_prices: number;
+}
+
+export interface PublicProfileResponse {
+  profile: User;
+  stats: PublicProfileStats;
+  crops: Crop[];
 }
 
 export interface Corridor {
@@ -62,6 +84,8 @@ export interface Crop extends BenchFields {
   status: 'AVAILABLE' | 'RESERVED' | 'SOLD_OUT' | 'ARCHIVED';
   farmer_name: string;
   farmer_phone: string;
+  farmer_verified?: boolean | number;
+  farmer_avatar?: string | null;
   fair_price_indicator: Corridor;
 }
 
@@ -88,7 +112,11 @@ export interface Negotiation extends BenchFields {
   buyer_name: string;
   buyer_role: Role;
   buyer_organization: string | null;
+  buyer_avatar?: string | null;
+  buyer_verified?: boolean | number;
   farmer_name: string;
+  farmer_avatar?: string | null;
+  farmer_verified?: boolean | number;
 }
 
 export interface Message {

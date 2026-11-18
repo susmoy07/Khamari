@@ -19,7 +19,7 @@ export default function ReceiptView({ receipt, onClose }: { receipt: Receipt; on
             type="button"
             onClick={onClose}
             aria-label="Close receipt"
-            className="rounded-full p-1.5 text-white/80 hover:bg-white/10 hover:text-white print:hidden"
+            className="rounded-full p-1.5 text-white/80 transition-all duration-200 hover:rotate-90 hover:scale-105 hover:bg-white/15 hover:text-white print:hidden"
           >
             <X className="h-5 w-5" />
           </button>
@@ -112,8 +112,8 @@ export default function ReceiptView({ receipt, onClose }: { receipt: Receipt; on
           {receipt.escrowInstructions && <div className="italic">{receipt.escrowInstructions}</div>}
         </div>
 
-        <button type="button" onClick={() => window.print()} className="btn-ghost w-full print:hidden">
-          <Printer className="h-4 w-4" /> Print / Save as PDF
+        <button type="button" onClick={() => window.print()} className="btn-ghost group w-full print:hidden">
+          <Printer className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" /> Print / Save as PDF
         </button>
       </div>
     </div>

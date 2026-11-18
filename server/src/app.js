@@ -8,6 +8,7 @@ import bazaarPriceRoutes from './routes/bazaarPriceRoutes.js';
 import cropRoutes from './routes/cropRoutes.js';
 import negotiationRoutes from './routes/negotiationRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -50,6 +51,7 @@ export function createApp() {
   app.use('/api/crops', cropRoutes);
   app.use('/api/negotiations', negotiationRoutes);
   app.use('/api/orders', orderRoutes);
+  app.use('/api/users', userRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

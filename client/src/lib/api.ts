@@ -5,6 +5,7 @@ import type {
   Negotiation,
   Order,
   PricePreview,
+  PublicProfileResponse,
   Receipt,
   Role,
   Unit,
@@ -100,12 +101,48 @@ export interface PublishPriceInput {
   market_notes?: string;
 }
 
+export interface UpdateProfileInput {
+  full_name?: string;
+  phone?: string;
+  organization_name?: string;
+  region?: string;
+  bio?: string;
+  nid_number?: string;
+  address?: string;
+  specialty_crops?: string;
+  years_experience?: number | string | null;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     req<{ user: User; token: string }>('/api/auth/login', { method: 'POST', body: { email, password } }),
   register: (body: RegisterInput) =>
     req<{ user: User; token: string }>('/api/auth/register', { method: 'POST', body }),
   me: () => req<{ user: User }>('/api/auth/me'),
+
+  userProfile: (userId: number) => req<PublicProfileResponse>(`/api/users/${userId}/profile`),
+  updateProfile: (body: UpdateProfileInput) =>
+    req<{ user: User }>('/api/users/me/profile', { method: 'PATCH', body }),
+  uploadAvatar: (file: File) => {
+    const fd = new FormData();
+    fd.append('avatar', file);
+    return req<{ user: User; avatar_url: string }>('/api/users/me/avatar', {
+      method: 'POST',
+      body: fd,
+    });
+  },
+  changePassword: (body: { current_password: string; new_password: string }) =>
+    req<{ message: string }>('/api/users/me/password', { method: 'PATCH', body }),
+  sendVerificationOtp: (body: { nid_number?: string }) =>
+    req<{
+      message: string;
+      email: string;
+      deliveredVia: 'email' | 'console_preview';
+      expiresInSeconds: number;
+      dev_otp?: string;
+    }>('/api/users/me/send-otp', { method: 'POST', body }),
+  verifyEmailOtp: (body: { otp: string; nid_number?: string }) =>
+    req<{ user: User; message: string }>('/api/users/me/verify-otp', { method: 'POST', body }),
 
   benchmarks: () => req<Benchmark[]>('/api/bazaar-prices/latest'),
   publishPrice: (b: PublishPriceInput) =>

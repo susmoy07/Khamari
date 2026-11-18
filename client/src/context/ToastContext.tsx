@@ -27,20 +27,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto flex max-w-md items-start gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
+            className={`animate-toast-in pointer-events-auto flex max-w-md items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-[0_14px_34px_rgba(0,0,0,0.22)] backdrop-blur-xl ${
               t.tone === 'success'
-                ? 'bg-forest-800 text-white'
+                ? 'border-emerald-400/40 bg-emerald-900/95 text-white shadow-emerald-950/30'
                 : t.tone === 'error'
-                ? 'bg-red-600 text-white'
-                : 'bg-ink text-white'
+                ? 'border-rose-400/45 bg-rose-700/95 text-white shadow-rose-950/30'
+                : 'border-slate-700/70 bg-slate-900/95 text-slate-100'
             }`}
           >
             {t.tone === 'success' ? (
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
             ) : t.tone === 'error' ? (
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-200" />
             ) : (
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
             )}
             <span>{t.msg}</span>
           </div>

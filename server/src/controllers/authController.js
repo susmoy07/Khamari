@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { userRepository } from '../repositories/index.js';
+import { sanitizePublicUser } from '../repositories/userRepository.js';
 import { signToken } from '../middleware/authMiddleware.js';
 
 const ALLOWED_ROLES = ['FARMER', 'BUYER', 'INSTITUTION', 'BAZAAR_COMMITTEE'];
@@ -56,7 +57,7 @@ export async function register(req, res, next) {
       role,
       organization_name: organization_name ? organization_name.trim() : null,
       region: region.trim(),
-      is_verified: role !== 'BAZAAR_COMMITTEE',
+      is_verified: false,
     });
 
     const token = signToken(user);
@@ -95,17 +96,7 @@ export async function login(req, res, next) {
       });
     }
 
-    const user = {
-      id: userRecord.id,
-      full_name: userRecord.full_name,
-      email: userRecord.email,
-      phone: userRecord.phone,
-      role: userRecord.role,
-      organization_name: userRecord.organization_name,
-      region: userRecord.region,
-      is_verified: Boolean(userRecord.is_verified),
-      created_at: userRecord.created_at,
-    };
+    const user = sanitizePublicUser(userRecord);
 
     const token = signToken(user);
     return res.json({
