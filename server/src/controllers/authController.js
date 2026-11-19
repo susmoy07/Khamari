@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { userRepository } from '../repositories/index.js';
-import { sanitizePublicUser } from '../repositories/userRepository.js';
+import { sanitizePublicUser } from '../repositories/UserRepository.js';
 import { signToken } from '../middleware/authMiddleware.js';
 
 const ALLOWED_ROLES = ['FARMER', 'BUYER', 'INSTITUTION', 'BAZAAR_COMMITTEE'];

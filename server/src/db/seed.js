@@ -3,8 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { pool } from '../config/db.js';
 import { initializeDatabase } from './init.js';
 
-export async function seedDatabase() {
-  await initializeDatabase();
+export async function seedDatabase({ skipInit = false } = {}) {
+  if (!skipInit) {
+    await initializeDatabase();
+  }
 
   const connection = await pool.getConnection();
   try {

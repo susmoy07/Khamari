@@ -56,6 +56,6 @@ export async function ensureDatabaseBootstrapped({ maxAttempts = 6, delayMs = 25
 
   if (userCount === 0) {
     console.log('[DB] Empty Users table detected; running initial demo seed...');
-    await seedDatabase();
+    await seedDatabase({ skipInit: true });
   }
 }
